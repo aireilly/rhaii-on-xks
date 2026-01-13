@@ -1,0 +1,38 @@
+{{- if eq .Values.bundle.source "redhat" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: patch-istiod-sa
+  namespace: {{ .Values.namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: servicemesh-operator3
+      restartPolicy: Never
+      containers:
+        - name: patch
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for istiod ServiceAccount..."
+              for i in $(seq 1 30); do
+                if kubectl get sa istiod -n {{ .Values.namespace }} 2>/dev/null; then
+                  echo "Patching istiod ServiceAccount..."
+                  kubectl patch sa istiod -n {{ .Values.namespace }} \
+                    -p '{"imagePullSecrets": [{"name": "{{ .Values.pullSecret.name }}"}]}'
+                  echo "Restarting istiod..."
+                  kubectl delete pod -n {{ .Values.namespace }} -l app=istiod 2>/dev/null || true
+                  exit 0
+                fi
+                echo "Waiting... ($i/30)"
+                sleep 10
+              done
+              echo "istiod SA not found after 5 minutes"
+              exit 1
+{{- end }}

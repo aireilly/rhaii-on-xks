@@ -1,0 +1,9 @@
+# User-specific configuration
+#
+# Auth options (set ONE):
+#   useSystemPodmanAuth: true                                   # Use ${XDG_RUNTIME_DIR}/containers/auth.json
+#   pullSecretFile: /path/to/pull-secret.txt                    # OpenShift pull secret
+#   authFile: ~/.config/containers/auth.json                    # Podman persistent location
+
+# Use system podman auth (requires: podman login registry.redhat.io)
+useSystemPodmanAuth: true

@@ -1,0 +1,18 @@
+# Ignore CRDs (applied via helmfile hook, not Helm)
+manifests-crds/
+
+# Ignore scripts
+scripts/
+
+# Ignore environments (helmfile-specific)
+environments/
+
+# Ignore helmfile
+helmfile.yaml.gotmpl
+
+# Standard ignores
+.git/
+.gitignore
+*.swp
+*.bak
+*.tmp

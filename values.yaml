@@ -1,0 +1,28 @@
+# Sail Operator Helm Chart - Default Values
+# Override in environments/default.yaml
+
+namespace: istio-system
+
+bundle:
+  source: redhat        # "redhat" or "konflux"
+  version: "3.2.1"
+
+pullSecret:
+  name: redhat-pull-secret
+  dockerConfigJson: ""  # Set via --set-file or environments/default.yaml
+
+# Auth source (set ONE of these in environments/default.yaml):
+#   useSystemPodmanAuth: true                    # Use ${XDG_RUNTIME_DIR}/containers/auth.json (recommended)
+#   pullSecretFile: /path/to/pull-secret.txt     # OpenShift pull secret
+#   authFile: ~/.config/containers/auth.json     # Custom auth file path
+useSystemPodmanAuth: false
+pullSecretFile: ""
+authFile: ""
+
+istio:
+  enabled: true
+  version: v1.27.3
+
+gatewayAPI:
+  version: "v1.4.0"
+  inferenceExtensionVersion: "v1.2.0"
