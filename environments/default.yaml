@@ -7,3 +7,8 @@
 
 # Use system podman auth (requires: podman login registry.redhat.io)
 useSystemPodmanAuth: true
+
+# Gateway API versions (uncomment to override defaults)
+# gatewayAPI:
+#   version: "v1.4.0"                    # Kubernetes Gateway API
+#   inferenceExtensionVersion: "v1.2.0"  # Gateway API Inference Extension

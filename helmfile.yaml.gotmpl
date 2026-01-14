@@ -52,11 +52,11 @@ releases:
       - events: ["presync"]
         showlogs: true
         command: "kubectl"
-        args: ["apply", "-k", "https://github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.4.0"]
+        args: ["apply", "-k", "https://github.com/kubernetes-sigs/gateway-api/config/crd?ref={{ .Values.gatewayAPI.version }}"]
       - events: ["presync"]
         showlogs: true
         command: "kubectl"
-        args: ["apply", "-k", "https://github.com/kubernetes-sigs/gateway-api-inference-extension/config/crd?ref=v1.2.0"]
+        args: ["apply", "-k", "https://github.com/kubernetes-sigs/gateway-api-inference-extension/config/crd?ref={{ .Values.gatewayAPI.inferenceExtensionVersion }}"]
       # Apply Sail Operator CRDs with server-side (for large CRDs)
       - events: ["presync"]
         showlogs: true

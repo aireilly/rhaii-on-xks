@@ -18,3 +18,10 @@ pullSecret:
 useSystemPodmanAuth: false
 pullSecretFile: ""
 authFile: ""
+
+# Gateway API CRD versions (applied via presync hooks)
+gatewayAPI:
+  # Kubernetes Gateway API (Gateway, HTTPRoute, etc.)
+  version: "v1.4.0"
+  # Gateway API Inference Extension (InferencePool, InferenceModel, etc.)
+  inferenceExtensionVersion: "v1.2.0"
