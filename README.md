@@ -1,23 +1,27 @@
 # Sail Operator Helm Chart
 
-Deploy Red Hat Sail Operator (OSSM 3.x) on any Kubernetes cluster without OLM.
+Deploy Red Hat Sail Operator (OSSM 3.x / Istio 1.27) on any Kubernetes cluster without OLM.
 
 ## Prerequisites
 
 - `kubectl` configured for your cluster
 - `helmfile` installed
-- For Red Hat registry: One of the following auth methods
+- Red Hat account for pull secret
 
 ## Quick Start
 
 ```bash
+# 1. Clone the chart
+git clone https://github.com/aneeshkp/sail-operator-chart.git
 cd sail-operator-chart
 
-# 1. Login to Red Hat registry (Option A - recommended)
-podman login registry.redhat.io
+# 2. Setup pull secret (see Configuration below)
 
-# 2. Deploy
+# 3. Deploy
 helmfile apply
+
+# 4. Verify
+kubectl get pods -n istio-system
 ```
 
 ## Configuration
@@ -48,8 +52,13 @@ useSystemPodmanAuth: true
 
 #### Option B: Pull Secret File
 
+```bash
+# Verify pull secret works
+podman pull --authfile ~/pull-secret.txt registry.redhat.io/ubi8/ubi-minimal --quiet && echo "Auth works!"
+```
+
+Then in `environments/default.yaml`:
 ```yaml
-# environments/default.yaml
 pullSecretFile: ~/pull-secret.txt
 ```
 
@@ -64,22 +73,22 @@ pullSecretFile: ""
 
 ## What Gets Deployed
 
-**Presync hooks (before Helm install):**
-1. Gateway API CRDs (v1.4.0) - from GitHub
-2. Gateway API Inference Extension CRDs (v1.2.0) - from GitHub
-3. Sail Operator CRDs (19 Istio CRDs) - applied with `--server-side`
+**Presync hooks** (before Helm install):
+- Gateway API CRDs (v1.4.0) - from GitHub
+- Gateway API Inference Extension CRDs (v1.2.0) - from GitHub
+- Sail Operator CRDs (19 Istio CRDs) - applied with `--server-side`
 
 **Helm install:**
-4. Namespace `istio-system`
-5. Pull secret `redhat-pull-secret`
-6. istiod ServiceAccount with `imagePullSecrets` (pre-created)
-7. Sail Operator deployment + RBAC
-8. Istio CR with Gateway API enabled
+- Namespace `istio-system`
+- Pull secret `redhat-pull-secret`
+- istiod ServiceAccount with `imagePullSecrets` (pre-created)
+- Sail Operator deployment + RBAC
+- Istio CR with Gateway API enabled
 
-**Post-install (automatic):**
-9. Operator deploys istiod (uses pre-created SA with `imagePullSecrets`)
+**Post-install** (automatic):
+- Operator deploys istiod (uses pre-created SA with `imagePullSecrets`)
 
-> **Why presync hooks?** CRDs are too large for Helm (some are 700KB+, Helm has 1MB limit) and require `--server-side` apply.
+> **Note:** CRDs are applied via presync hooks because they're too large for Helm (some are 700KB+) and require `--server-side` apply.
 
 ## Version Compatibility
 
@@ -163,50 +172,28 @@ kubectl get pods -n istio-system -l app=istiod
 
 ## Post-Deployment: Pull Secret for Application Namespaces
 
-When deploying applications that use Istio Gateway API (e.g., llm-d), Istio auto-provisions Gateway pods in **your application namespace**. These pods pull `istio-proxyv2` from `registry.redhat.io` and need the pull secret.
-
-**After deploying llm-d, run these steps:**
+When deploying applications that use Istio Gateway API (e.g., llm-d), Gateway pods are auto-provisioned in your application namespace and need the pull secret for `istio-proxyv2`.
 
 ```bash
-# Set your application namespace
-export APP_NAMESPACE=my-app-namespace
-
-# 1. Copy pull secret to your application namespace
-kubectl get secret redhat-pull-secret -n istio-system -o yaml | \
-  sed "s/namespace: istio-system/namespace: ${APP_NAMESPACE}/" | \
-  kubectl apply -f -
-
-# 2. Patch the gateway's ServiceAccount (name varies by deployment)
-#    Find it with: kubectl get sa -n ${APP_NAMESPACE} | grep gateway
-kubectl patch serviceaccount <gateway-sa-name> -n ${APP_NAMESPACE} \
-  -p '{"imagePullSecrets": [{"name": "redhat-pull-secret"}]}'
-
-# 3. Restart the gateway pod
-kubectl delete pod -n ${APP_NAMESPACE} -l gateway.istio.io/managed=istio.io-gateway-controller
-```
-
-**Example for llm-d:**
-
-```bash
-export APP_NAMESPACE=llmd-pd
-
-kubectl get secret redhat-pull-secret -n istio-system -o yaml | \
-  sed "s/namespace: istio-system/namespace: ${APP_NAMESPACE}/" | \
-  kubectl apply -f -
-
-kubectl patch serviceaccount infra-inference-scheduling-inference-gateway-istio -n ${APP_NAMESPACE} \
-  -p '{"imagePullSecrets": [{"name": "redhat-pull-secret"}]}'
-
-kubectl delete pod -n ${APP_NAMESPACE} -l gateway.istio.io/managed=istio.io-gateway-controller
-```
-
-**Or use the helper script:**
-
-```bash
+# Use the helper script
 ./scripts/copy-pull-secret.sh <namespace> <gateway-sa-name>
+
+# Example for llm-d:
+./scripts/copy-pull-secret.sh llmd-pd infra-inference-scheduling-inference-gateway-istio
 ```
 
-> **Why?** Istio Gateway pods run Envoy proxy (`istio-proxyv2`) which is pulled from `registry.redhat.io`. Without the pull secret in your namespace, these pods will have `ImagePullBackOff` errors.
+Or manually:
+
+```bash
+export APP_NAMESPACE=<your-namespace>
+export GATEWAY_SA=<gateway-sa-name>  # Find with: kubectl get sa -n ${APP_NAMESPACE} | grep gateway
+
+# Copy secret, patch SA, restart pod
+kubectl get secret redhat-pull-secret -n istio-system -o yaml | \
+  sed "s/namespace: istio-system/namespace: ${APP_NAMESPACE}/" | kubectl apply -f -
+kubectl patch sa ${GATEWAY_SA} -n ${APP_NAMESPACE} -p '{"imagePullSecrets": [{"name": "redhat-pull-secret"}]}'
+kubectl delete pod -n ${APP_NAMESPACE} -l gateway.istio.io/managed=istio.io-gateway-controller
+```
 
 ---
 
