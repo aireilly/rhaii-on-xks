@@ -63,9 +63,9 @@ find "$CHART_DIR/manifests-crds" -name "*.yaml" -delete 2>/dev/null || true
 find "$CHART_DIR/templates" -name "*.yaml" \
   ! -name "pull-secret.yaml" \
   ! -name "istio-cr.yaml" \
-  ! -name "serviceaccount-istiod.yaml" \
   ! -name "post-install-hook.yaml" \
   -delete 2>/dev/null || true
+# Note: istiod ServiceAccount is in manifests-presync/ (not templates/) with operator's Helm annotations
 
 # Split manifests
 echo "[3/3] Splitting into CRDs and templates..."
@@ -105,7 +105,10 @@ for doc in docs:
             with open(filepath, 'w') as out:
                 out.write(doc.strip() + '\n')
         elif kind == 'Namespace':
-            # Skip namespace - created by helmfile hook
+            # Skip namespace - created in manifests-presync/
+            continue
+        elif kind == 'ServiceAccount' and name == 'istiod':
+            # Skip istiod SA - managed in manifests-presync/ with operator's Helm annotations
             continue
         else:
             filepath = os.path.join(templates_dir, filename)

@@ -74,13 +74,13 @@ pullSecretFile: ""
 ## What Gets Deployed
 
 **Presync hooks** (before Helm install):
+- Namespace `istio-system`
 - istiod ServiceAccount with `imagePullSecrets` (pre-created with operator's Helm annotations)
 - Gateway API CRDs (v1.4.0) - from GitHub
 - Gateway API Inference Extension CRDs (v1.2.0) - from GitHub
 - Sail Operator CRDs (19 Istio CRDs) - applied with `--server-side`
 
 **Helm install:**
-- Namespace `istio-system`
 - Pull secret `redhat-pull-secret`
 - Sail Operator deployment + RBAC
 - Istio CR with Gateway API enabled
@@ -209,6 +209,7 @@ sail-operator-chart/
 │   └── default.yaml             # User config (useSystemPodmanAuth)
 ├── manifests-crds/              # 19 Istio CRDs (applied via presync hook)
 ├── manifests-presync/           # Resources applied before Helm install
+│   ├── namespace.yaml              # istio-system namespace
 │   └── serviceaccount-istiod.yaml  # istiod SA with imagePullSecrets
 ├── templates/
 │   ├── deployment-*.yaml        # Sail Operator deployment

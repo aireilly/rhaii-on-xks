@@ -20,6 +20,7 @@ Deploy Red Hat Sail Operator (OSSM 3.x) on vanilla Kubernetes (AKS, EKS, GKE) wi
 │                        Helm Chart                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Presync (helmfile)                                             │
+│  ├── istio-system namespace                                     │
 │  ├── istiod ServiceAccount with imagePullSecrets                │
 │  │   (pre-created with operator's Helm annotations)             │
 │  ├── Gateway API CRDs (v1.4.0)                                  │
@@ -27,7 +28,6 @@ Deploy Red Hat Sail Operator (OSSM 3.x) on vanilla Kubernetes (AKS, EKS, GKE) wi
 │  └── Sail Operator CRDs (19 Istio CRDs, server-side apply)      │
 ├─────────────────────────────────────────────────────────────────┤
 │  Helm Install                                                   │
-│  ├── istio-system namespace                                     │
 │  ├── Pull secret (redhat-pull-secret)                           │
 │  ├── Sail Operator deployment + RBAC                            │
 │  └── Istio CR (with Gateway API enabled)                        │
@@ -182,6 +182,7 @@ sail-operator-chart/
 │   ├── customresourcedefinition-istios-*.yaml
 │   └── ... (19 Istio CRDs)
 ├── manifests-presync/                     # Resources applied before Helm install
+│   ├── namespace.yaml                     # istio-system namespace
 │   └── serviceaccount-istiod.yaml         # istiod SA with imagePullSecrets
 ├── templates/
 │   ├── deployment-servicemesh-operator3.yaml
