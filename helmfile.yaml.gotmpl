@@ -48,6 +48,11 @@ releases:
         file: {{ .Values.authFile }}
 {{- end }}
     hooks:
+      # Apply istiod ServiceAccount before Helm (with operator's expected annotations)
+      - events: ["presync"]
+        showlogs: true
+        command: "kubectl"
+        args: ["apply", "-f", "manifests-presync/"]
       # Apply Gateway API CRDs
       - events: ["presync"]
         showlogs: true

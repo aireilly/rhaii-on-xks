@@ -20,19 +20,20 @@ Deploy Red Hat Sail Operator (OSSM 3.x) on vanilla Kubernetes (AKS, EKS, GKE) wi
 │                        Helm Chart                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Presync (helmfile)                                             │
+│  ├── istiod ServiceAccount with imagePullSecrets                │
+│  │   (pre-created with operator's Helm annotations)             │
 │  ├── Gateway API CRDs (v1.4.0)                                  │
 │  ├── Gateway API Inference Extension CRDs (v1.2.0)              │
-│  ├── Sail Operator CRDs (19 Istio CRDs, server-side apply)      │
-│  └── istio-system namespace                                     │
+│  └── Sail Operator CRDs (19 Istio CRDs, server-side apply)      │
 ├─────────────────────────────────────────────────────────────────┤
 │  Helm Install                                                   │
+│  ├── istio-system namespace                                     │
 │  ├── Pull secret (redhat-pull-secret)                           │
-│  ├── istiod ServiceAccount with imagePullSecrets                │
 │  ├── Sail Operator deployment + RBAC                            │
 │  └── Istio CR (with Gateway API enabled)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  Operator (post-install)                                        │
-│  ├── Reconciles istiod SA (preserves imagePullSecrets)          │
+│  ├── Adopts istiod SA (preserves imagePullSecrets)              │
 │  └── Deploys Istio components                                   │
 │      ├── istiod (control plane)                                 │
 │      ├── istio-cni (optional)                                   │
@@ -125,20 +126,26 @@ podman run --rm $AUTH_ARG \
 
 ### istiod ServiceAccount (automated)
 
-The `istiod` SA is pre-created by Helm with `imagePullSecrets`:
+The `istiod` SA is pre-created in the presync hook with `imagePullSecrets` and the operator's expected Helm annotations:
 
 ```yaml
-# templates/serviceaccount-istiod.yaml
+# manifests-presync/serviceaccount-istiod.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: istiod
   namespace: istio-system
+  annotations:
+    # Allow operator's Helm chart to adopt this ServiceAccount
+    meta.helm.sh/release-name: default-istiod
+    meta.helm.sh/release-namespace: istio-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
 imagePullSecrets:
   - name: redhat-pull-secret
 ```
 
-The operator uses **strategic merge patch** when reconciling, preserving the `imagePullSecrets`.
+The operator's internal Helm chart adopts this SA and preserves the `imagePullSecrets` during reconciliation.
 
 ### Gateway SAs (manual)
 
@@ -174,10 +181,11 @@ sail-operator-chart/
 ├── manifests-crds/                        # CRDs (applied with --server-side)
 │   ├── customresourcedefinition-istios-*.yaml
 │   └── ... (19 Istio CRDs)
+├── manifests-presync/                     # Resources applied before Helm install
+│   └── serviceaccount-istiod.yaml         # istiod SA with imagePullSecrets
 ├── templates/
 │   ├── deployment-servicemesh-operator3.yaml
 │   ├── serviceaccount-*.yaml              # Operator SA
-│   ├── serviceaccount-istiod.yaml         # istiod SA with imagePullSecrets
 │   ├── istio-cr.yaml                      # Istio CR with Gateway API
 │   ├── pull-secret.yaml                   # Registry pull secret
 │   └── *role*.yaml                        # RBAC

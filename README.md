@@ -74,6 +74,7 @@ pullSecretFile: ""
 ## What Gets Deployed
 
 **Presync hooks** (before Helm install):
+- istiod ServiceAccount with `imagePullSecrets` (pre-created with operator's Helm annotations)
 - Gateway API CRDs (v1.4.0) - from GitHub
 - Gateway API Inference Extension CRDs (v1.2.0) - from GitHub
 - Sail Operator CRDs (19 Istio CRDs) - applied with `--server-side`
@@ -81,14 +82,13 @@ pullSecretFile: ""
 **Helm install:**
 - Namespace `istio-system`
 - Pull secret `redhat-pull-secret`
-- istiod ServiceAccount with `imagePullSecrets` (pre-created)
 - Sail Operator deployment + RBAC
 - Istio CR with Gateway API enabled
 
 **Post-install** (automatic):
 - Operator deploys istiod (uses pre-created SA with `imagePullSecrets`)
 
-> **Note:** CRDs are applied via presync hooks because they're too large for Helm (some are 700KB+) and require `--server-side` apply.
+> **Note:** CRDs are applied via presync hooks because they're too large for Helm (some are 700KB+) and require `--server-side` apply. The istiod ServiceAccount is also applied in presync with the operator's expected Helm annotations to avoid ownership conflicts.
 
 ## Version Compatibility
 
@@ -208,12 +208,13 @@ sail-operator-chart/
 ├── environments/
 │   └── default.yaml             # User config (useSystemPodmanAuth)
 ├── manifests-crds/              # 19 Istio CRDs (applied via presync hook)
+├── manifests-presync/           # Resources applied before Helm install
+│   └── serviceaccount-istiod.yaml  # istiod SA with imagePullSecrets
 ├── templates/
-│   ├── deployment-*.yaml            # Sail Operator deployment
-│   ├── istio-cr.yaml                # Istio CR with Gateway API
-│   ├── pull-secret.yaml             # Registry pull secret
-│   ├── serviceaccount-istiod.yaml   # istiod SA with imagePullSecrets
-│   └── *.yaml                       # RBAC, ServiceAccount, etc.
+│   ├── deployment-*.yaml        # Sail Operator deployment
+│   ├── istio-cr.yaml            # Istio CR with Gateway API
+│   ├── pull-secret.yaml         # Registry pull secret
+│   └── *.yaml                   # RBAC, ServiceAccount, etc.
 └── scripts/
     ├── update-bundle.sh         # Update to new bundle version
     ├── update-pull-secret.sh    # Update expired pull secret
