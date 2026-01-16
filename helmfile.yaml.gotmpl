@@ -21,7 +21,7 @@ releases:
       - environments/default.yaml
 {{- if .Values.useSystemPodmanAuth }}
       - pullSecret:
-          dockerConfigJson: {{ exec "cat" (list (env "XDG_RUNTIME_DIR" | printf "%s/containers/auth.json")) | quote }}
+          dockerConfigJson: {{ exec "cat" (list (env "HOME" | printf "%s/.config/containers/auth.json")) | quote }}
 {{- else if .Values.pullSecretFile }}
       - pullSecret:
           dockerConfigJson: {{ exec "cat" (list .Values.pullSecretFile) | quote }}

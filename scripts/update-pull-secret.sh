@@ -22,9 +22,12 @@ if [ -n "$PULL_SECRET_FILE" ]; then
   fi
   DOCKER_CONFIG_JSON=$(cat "$PULL_SECRET_FILE")
   echo "Using pull secret from: $PULL_SECRET_FILE"
+elif [ -f ~/.config/containers/auth.json ]; then
+  DOCKER_CONFIG_JSON=$(cat ~/.config/containers/auth.json)
+  echo "Using podman auth: ~/.config/containers/auth.json"
 elif [ -f "${XDG_RUNTIME_DIR}/containers/auth.json" ]; then
   DOCKER_CONFIG_JSON=$(cat "${XDG_RUNTIME_DIR}/containers/auth.json")
-  echo "Using system podman auth: ${XDG_RUNTIME_DIR}/containers/auth.json"
+  echo "Using session podman auth: ${XDG_RUNTIME_DIR}/containers/auth.json"
 elif [ -f ~/.docker/config.json ]; then
   DOCKER_CONFIG_JSON=$(cat ~/.docker/config.json)
   echo "Using docker auth: ~/.docker/config.json"

@@ -21,52 +21,74 @@ LWS provides an API for deploying a group of pods as a unit of replication, desi
 
 - `kubectl` configured for your cluster
 - `helmfile` installed
-- `podman login registry.redhat.io` (for Red Hat registry auth)
+- Red Hat account for pull secret
 
 ## Quick Start
 
 ```bash
+# 1. Clone the chart
+git clone https://github.com/aneeshkp/lws-operator-chart.git
 cd lws-operator-chart
 
-# 1. Login to Red Hat registry
-podman login registry.redhat.io
+# 2. Setup pull secret (see Configuration below)
 
-# 2. Deploy
+# 3. Deploy
 helmfile apply
+
+# 4. Verify
+kubectl get pods -n openshift-lws-operator
+kubectl get leaderworkersetoperator cluster
 ```
 
 ## Configuration
 
-Edit `environments/default.yaml`. Choose ONE auth method:
+### Step 1: Get Red Hat Pull Secret
 
-### Option A: System Podman Auth (Recommended)
+1. Go to: https://console.redhat.com/openshift/install/pull-secret
+2. Login and download pull secret
+3. Save as `~/pull-secret.txt`
 
+### Step 2: Setup Auth (Choose ONE)
+
+#### Option A: Persistent Podman Auth (Recommended)
+
+```bash
+# Copy pull secret to persistent location
+mkdir -p ~/.config/containers
+cp ~/pull-secret.txt ~/.config/containers/auth.json
+```
+
+Then in `environments/default.yaml`:
 ```yaml
-# environments/default.yaml
 useSystemPodmanAuth: true
 ```
 
-### Option B: Pull Secret File
+#### Option B: Pull Secret File
 
+```bash
+# Verify pull secret works
+podman pull --authfile ~/pull-secret.txt registry.redhat.io/ubi8/ubi-minimal --quiet && echo "Auth works!"
+```
+
+Then in `environments/default.yaml`:
 ```yaml
-# environments/default.yaml
 pullSecretFile: ~/pull-secret.txt
 ```
 
 ## What Gets Deployed
 
-**Presync hooks (before Helm install):**
-1. LeaderWorkerSetOperator CRD - applied with `--server-side`
-2. Operator namespace (`openshift-lws-operator`)
+**Presync hooks** (before Helm install):
+- LeaderWorkerSetOperator CRD - applied with `--server-side`
+- Operator namespace (`openshift-lws-operator`)
 
 **Helm install:**
-3. Pull secret (`redhat-pull-secret`)
-4. LWS Operator ServiceAccount with `imagePullSecrets`
-5. LWS Operator deployment + RBAC
+- Pull secret (`redhat-pull-secret`)
+- LWS Operator ServiceAccount with `imagePullSecrets`
+- LWS Operator deployment + RBAC
 
-**Post-install:**
-6. LeaderWorkerSetOperator CR (`cluster`)
-7. Operator deploys LeaderWorkerSet CRD and webhooks
+**Post-install** (automatic):
+- LeaderWorkerSetOperator CR (`cluster`)
+- Operator deploys LeaderWorkerSet CRD and webhooks
 
 ## Version Compatibility
 
