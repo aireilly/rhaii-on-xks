@@ -91,6 +91,7 @@ jobs:
           # Commit version bump
           git add Chart.yaml
           git commit -m "Bump chart version to $NEW_VERSION [skip ci]"
+          git pull --rebase origin main
           git push
 
       - name: Package Chart
