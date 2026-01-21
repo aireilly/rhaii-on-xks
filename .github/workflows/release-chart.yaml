@@ -7,6 +7,9 @@ on:
       - 'values.yaml'
       - 'templates/**'
       - 'manifests-crds/**'
+      - 'manifests-presync/**'
+      - 'environments/**'
+      - 'helmfile.yaml.gotmpl'
   push:
     branches:
       - main
@@ -15,6 +18,9 @@ on:
       - 'values.yaml'
       - 'templates/**'
       - 'manifests-crds/**'
+      - 'manifests-presync/**'
+      - 'environments/**'
+      - 'helmfile.yaml.gotmpl'
   workflow_dispatch:
 
 jobs:
