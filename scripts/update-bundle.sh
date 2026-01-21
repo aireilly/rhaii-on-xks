@@ -55,9 +55,11 @@ podman run --rm $AUTH_ARG \
 
 echo "Extracted $(wc -l < "$TMP_DIR/manifests.yaml") lines"
 
-# Clear existing templates and CRDs (except custom templates)
+# Clear existing templates and CRDs (except custom/stub CRDs)
 echo "[2/3] Clearing old manifests..."
-find "$CHART_DIR/manifests-crds" -name "*.yaml" -delete 2>/dev/null || true
+find "$CHART_DIR/manifests-crds" -name "*.yaml" \
+  ! -name "customresourcedefinition-infrastructures-config-openshift-io.yaml" \
+  -delete 2>/dev/null || true
 find "$CHART_DIR/templates" -name "*.yaml" \
   ! -name "pull-secret.yaml" \
   ! -name "certmanager-cr.yaml" \
