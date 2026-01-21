@@ -7,6 +7,9 @@ on:
       - 'values.yaml'
       - 'templates/**'
       - 'manifests-crds/**'
+      - 'manifests-presync/**'
+      - 'environments/**'
+      - 'helmfile.yaml.gotmpl'
   push:
     branches:
       - main
@@ -15,6 +18,9 @@ on:
       - 'values.yaml'
       - 'templates/**'
       - 'manifests-crds/**'
+      - 'manifests-presync/**'
+      - 'environments/**'
+      - 'helmfile.yaml.gotmpl'
   workflow_dispatch:
 
 jobs:
@@ -38,7 +44,7 @@ jobs:
 
   # Run on main - auto-bump version and publish
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: lint
     runs-on: ubuntu-latest
     permissions:
@@ -85,6 +91,7 @@ jobs:
           # Commit version bump
           git add Chart.yaml
           git commit -m "Bump chart version to $NEW_VERSION [skip ci]"
+          git pull --rebase origin main
           git push
 
       - name: Package Chart
