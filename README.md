@@ -80,6 +80,7 @@ Arguments are resolved in the following priority order (highest to lowest):
 - `-l, --log-level`: Set the log level (choices: DEBUG, INFO, WARNING, ERROR, CRITICAL, default: INFO)
 - `-k, --kube-config`: Path to the kubeconfig file (overrides KUBECONFIG environment variable)
 - `-c, --config`: Path to a custom config file
+- `-u, --cloud-provider`: Specify cloud provider or "auto"
 - `-h, --help`: Show help message
 
 ## Environment Variables
@@ -103,5 +104,6 @@ The application includes a test execution framework. Tests are defined in the `t
 ## Error Handling
 
 - If the Kubernetes connection fails, the application logs an error and exits with code 1
+- If the cloud provider used for cluster provisioning cannot be autodetected exit with code 2
 - All errors are logged according to the configured log level
 - Connection errors include detailed exception information when log level is set to DEBUG
