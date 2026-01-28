@@ -58,6 +58,8 @@ podman run --rm --pull=always \
 echo "Extracted $(wc -l < "$TMP_DIR/manifests.yaml") lines"
 
 # Clear existing templates and CRDs (except custom templates)
+# Note: manifests-presync/ is NOT cleared - it contains custom resources like
+# lws-controller-manager ServiceAccount with imagePullSecrets
 echo "[4/4] Splitting into CRDs and templates..."
 find "$CHART_DIR/manifests-crds" -name "*.yaml" -delete 2>/dev/null || true
 find "$CHART_DIR/templates" -name "*.yaml" \

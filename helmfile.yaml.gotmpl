@@ -45,6 +45,17 @@ releases:
         args:
           - -c
           - "kubectl create namespace {{ .Values.namespace | default "openshift-lws-operator" }} --dry-run=client -o yaml | kubectl apply -f -"
+      # Pre-create lws-controller-manager ServiceAccount with imagePullSecrets
+      # The operator will adopt this SA when it creates the controller
+      - events: ["presync"]
+        showlogs: true
+        command: kubectl
+        args:
+          - apply
+          - --server-side
+          - --force-conflicts
+          - -f
+          - manifests-presync/
 {{- if .Values.lwsOperator.enabled }}
       - events: ["postsync"]
         showlogs: true
