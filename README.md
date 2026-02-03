@@ -111,7 +111,14 @@ For full **InferencePool v1** support (required by [llm-d](https://github.com/ll
 | Inference Extension CRDs | v1.2.0 | Compatible |
 | Istio | v1.27.3 | **Partial** - v1.28.0+ required for full InferencePool v1 |
 
-> **Note:** Istio 1.28 will be GA with **OCP 4.21 (February 2025)**. Until then, some InferencePool features may not work as expected with Istio 1.27.x.
+### Sail Operator vs InferencePool API Version
+
+| Sail Operator | Istio Version | InferencePool API | Status | Red Hat Catalog |
+|---------------|---------------|-------------------|--------|-----------------|
+| 3.0.x | ~1.24-1.26 | `inference.networking.x-k8s.io/v1alpha2` | Experimental | [3.0.7](https://catalog.redhat.com/en/software/containers/openshift-service-mesh/istio-sail-operator-bundle/67ab6f5f9e87ae6cc720911a?image=69383aee698c4a2025727d59) |
+| **3.2.x** | **1.28+** | `inference.networking.x-k8s.io/v1` | **Stable (GA)** | [3.2.1](https://catalog.redhat.com/en/software/containers/openshift-service-mesh/istio-sail-operator-bundle/67ab6f5f9e87ae6cc720911a?image=693845a780befcc856665e1d) |
+
+> **Note:** Istio 1.28 (Sail 3.2.x) is when InferencePool reached stable `v1` status. Sail 3.0.x uses the experimental `v1alpha2` API.
 
 ## Update to New Bundle Version
 

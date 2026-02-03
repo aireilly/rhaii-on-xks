@@ -30,3 +30,21 @@ gatewayAPI:
 # Creates a Job that annotates webhooks with sailoperator.io/ignore=true
 fixWebhookLoop:
   enabled: true
+
+# Inference Gateway for KServe/llm-d
+# Creates Gateway with CA bundle mount for mTLS to backend services
+inferenceGateway:
+  enabled: true
+  name: inference-gateway
+  namespace: opendatahub  # Namespace where KServe is deployed
+  # CA bundle configuration
+  caBundle:
+    # Source secret containing the CA certificate
+    sourceSecret: opendatahub-ca
+    sourceNamespace: cert-manager
+    # Key in the source secret (try ca.crt first, fallback to tls.crt)
+    sourceKey: tls.crt
+    # ConfigMap name to create with the CA bundle
+    configMapName: odh-ca-bundle
+    # Mount path in Gateway pod (must match KServe llm-d expectation)
+    mountPath: /var/run/secrets/opendatahub
