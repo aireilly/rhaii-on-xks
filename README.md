@@ -14,12 +14,64 @@ Infrastructure Helm charts for deploying llm-d on xKS platforms (AKS, EKS, GKE).
 
 - Kubernetes cluster (AKS, EKS, GKE)
 - `kubectl`, `helm`, `helmfile`
-- Red Hat pull secret
+- Red Hat account (for Sail Operator images from `registry.redhat.io`)
+
+### Red Hat Pull Secret Setup
+
+The Sail Operator and RHAIIS images are hosted on `registry.redhat.io` which requires authentication.
+Choose **one** of the following methods:
+
+#### Method 1: Registry Service Account (Recommended for Customers)
+
+Create a Registry Service Account (works for both Sail Operator and RHAIIS images):
+
+1. Go to: https://access.redhat.com/terms-based-registry/
+2. Click "New Service Account"
+3. Create account and note the username (e.g., `12345678|myserviceaccount`)
+4. Login with the service account credentials:
 
 ```bash
-# Configure pull secret
+$ podman login registry.redhat.io
+Username: {REGISTRY-SERVICE-ACCOUNT-USERNAME}
+Password: {REGISTRY-SERVICE-ACCOUNT-PASSWORD}
+Login Succeeded!
+
+# Verify it works
+$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.2
+```
+
+Then configure `values.yaml`:
+```yaml
+useSystemPodmanAuth: true
+```
+
+**Alternative:** Download the pull secret file (OpenShift secret tab) and copy to persistent location:
+```bash
 mkdir -p ~/.config/containers
 cp ~/pull-secret.txt ~/.config/containers/auth.json
+```
+
+> **Note:** Registry Service Accounts are recommended as they don't expire like personal credentials and work for all Red Hat registry images.
+
+#### Method 2: Podman Login with Red Hat Account (For Developers)
+
+If you have direct Red Hat account access (e.g., internal developers):
+
+```bash
+$ podman login registry.redhat.io
+Username: {YOUR-REDHAT-USERNAME}
+Password: {YOUR-REDHAT-PASSWORD}
+Login Succeeded!
+
+# Verify it works
+$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.2
+```
+
+This stores credentials in `${XDG_RUNTIME_DIR}/containers/auth.json` or `~/.config/containers/auth.json`.
+
+Then configure `values.yaml`:
+```yaml
+useSystemPodmanAuth: true
 ```
 
 ## Quick Start
@@ -106,9 +158,20 @@ Operator helmfiles are imported from:
 
 This approach imports the full helmfiles including presync hooks for CRD installation.
 
-## Monitoring (Optional)
+## Deployment Options
 
-Monitoring is **disabled by default** in the KServe odh-xks overlay to avoid Prometheus Operator dependency.
+This infrastructure supports two deployment methods for LLM serving:
+
+| Method | Description | Use Case |
+|--------|-------------|----------|
+| **KServe LLMInferenceService** | Uses KServe controller with `LLMInferenceService` CRD | Red Hat OpenShift AI compatible, production |
+| **Upstream llm-d Helm Charts** | Uses `llm-d-modelservice` Helm chart directly | Community, flexible configuration |
+
+---
+
+## KServe Configuration (LLMInferenceService)
+
+This section applies when deploying models via KServe's `LLMInferenceService` CRD.
 
 ### KServe Controller Settings
 
@@ -148,13 +211,9 @@ On OpenShift, LLMInferenceService uses **Authorino** (via Red Hat Connectivity L
 2. Use an API Gateway with auth (e.g., Kong, Ambassador)
 3. Implement auth at the application level
 
-### Enabling Monitoring
+### Enabling Monitoring (KServe)
 
-Monitoring is only needed if you:
-- Want to use **Workload Variant Autoscaler (WVA)** - requires Prometheus
-- Want to visualize metrics with **Grafana dashboards**
-
-To enable monitoring:
+To enable Prometheus monitoring for KServe-managed workloads:
 
 1. Deploy Prometheus Operator on your cluster (see [monitoring-stack/](./monitoring-stack/))
 
@@ -165,7 +224,21 @@ kubectl set env deployment/kserve-controller-manager \
   LLMISVC_MONITORING_DISABLED=false
 ```
 
-3. Enable monitoring in your llm-d `values.yaml`:
+This enables KServe to automatically create `PodMonitor` resources for vLLM pods.
+
+---
+
+## Upstream llm-d Configuration (Helm Charts)
+
+This section applies when deploying models via the upstream [llm-d-modelservice](https://github.com/llm-d/llm-d/tree/main/charts/llm-d-modelservice) Helm chart directly.
+
+### Enabling Monitoring (Upstream llm-d)
+
+To enable Prometheus monitoring for upstream llm-d deployments:
+
+1. Deploy Prometheus Operator on your cluster (see [monitoring-stack/](./monitoring-stack/))
+
+2. Enable monitoring in your llm-d `values.yaml`:
 ```yaml
 inferenceExtension:
   monitoring:
@@ -183,7 +256,11 @@ decode:
       enabled: true
 ```
 
+This creates `PodMonitor` resources for the EPP scheduler and vLLM pods.
+
 See [monitoring-stack/](./monitoring-stack/) for details.
+
+---
 
 ## KServe Integration
 
@@ -429,8 +506,14 @@ See the [KServe samples](https://github.com/opendatahub-io/kserve/tree/release-v
 
 ## Next Steps
 
-After deploying infrastructure, follow the [llm-d guides](https://github.com/llm-d/llm-d/tree/main/guides) to deploy llm-d.
+### For Upstream llm-d Deployment (without KServe)
+
+After deploying infrastructure, follow the [llm-d guides](https://github.com/llm-d/llm-d/tree/main/guides) to deploy models using the upstream Helm charts.
+
+### For KServe LLMInferenceService Deployment
+
+See the [KServe Integration](#kserve-integration) and [Deploying LLMInferenceService](#deploying-llminferenceservice) sections above.
 
 **Helper scripts:**
-- `scripts/copy-pull-secret.sh <namespace>` - Fix gateway pull secret issues
-- `scripts/setup-gateway.sh` - Set up Gateway for KServe integration
+- `scripts/copy-pull-secret.sh <namespace>` - Copy Red Hat pull secret to application namespaces
+- `scripts/setup-gateway.sh` - Set up Gateway with CA bundle for KServe mTLS
