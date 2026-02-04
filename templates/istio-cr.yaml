@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   namespace: {{ .Values.namespace }}
-  version: v1.27.3
+  version: {{ .Values.istioVersion | default "v1.26.6" }}
   values:
     pilot:
       env:

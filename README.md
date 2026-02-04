@@ -94,31 +94,30 @@ pullSecretFile: ""
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Sail Operator | 3.2.1 | Red Hat Service Mesh 3.x |
-| Istio | v1.27.3 | Latest in bundle 3.2.1 |
+| Sail Operator | 3.1.4 / 3.2.1 | Red Hat Service Mesh 3.x |
+| Istio | v1.26.6 / v1.27.3 | Depends on bundle version |
 | Gateway API CRDs | v1.4.0 | Kubernetes SIG |
 | Gateway API Inference Extension | v1.2.0 | For LLM inference routing |
 
 **OLM Bundle:** `registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle` ([Red Hat Catalog](https://catalog.redhat.com/en/software/containers/openshift-service-mesh/istio-sail-operator-bundle/67ab6f5f9e87ae6cc720911a))
 
-### Gateway API Inference Extension (llm-d) Compatibility
-
-For full **InferencePool v1** support (required by [llm-d](https://github.com/llm-d/llm-d) and similar LLM serving platforms):
-
-| Requirement | This Chart | Status |
-|-------------|-----------|--------|
-| Gateway API CRDs | v1.4.0 | Compatible |
-| Inference Extension CRDs | v1.2.0 | Compatible |
-| Istio | v1.27.3 | **Partial** - v1.28.0+ required for full InferencePool v1 |
-
 ### Sail Operator vs InferencePool API Version
 
-| Sail Operator | Istio Version | InferencePool API | Status | Red Hat Catalog |
-|---------------|---------------|-------------------|--------|-----------------|
-| 3.0.x | ~1.24-1.26 | `inference.networking.x-k8s.io/v1alpha2` | Experimental | [3.0.7](https://catalog.redhat.com/en/software/containers/openshift-service-mesh/istio-sail-operator-bundle/67ab6f5f9e87ae6cc720911a?image=69383aee698c4a2025727d59) |
-| **3.2.x** | **1.28+** | `inference.networking.x-k8s.io/v1` | **Stable (GA)** | [3.2.1](https://catalog.redhat.com/en/software/containers/openshift-service-mesh/istio-sail-operator-bundle/67ab6f5f9e87ae6cc720911a?image=693845a780befcc856665e1d) |
+| Sail Operator | Istio Version | InferencePool API | KServe Compatibility |
+|---------------|---------------|-------------------|----------------------|
+| **3.1.x** | **v1.26.x** | `inference.networking.x-k8s.io/v1alpha2` | **KServe v0.15** (uses v1alpha2) |
+| 3.2.x | v1.27.x | `inference.networking.k8s.io/v1` | Future KServe versions (v1 API) |
 
-> **Note:** Istio 1.28 (Sail 3.2.x) is when InferencePool reached stable `v1` status. Sail 3.0.x uses the experimental `v1alpha2` API.
+> **Important:** KServe v0.15 creates InferencePool using the experimental `v1alpha2` API (`inference.networking.x-k8s.io`).
+> OSSM 3.2 watches the stable `v1` API (`inference.networking.k8s.io`), which is incompatible.
+> **Use OSSM 3.1.x (Istio 1.26.x) for KServe v0.15.**
+
+### Bundle Version to Istio Version Mapping
+
+| Bundle | Istio Version | `istioVersion` in values.yaml |
+|--------|---------------|-------------------------------|
+| 3.1.4 | v1.26.6 | `v1.26.6` |
+| 3.2.1 | v1.27.3 | `v1.27.3` |
 
 ## Update to New Bundle Version
 
@@ -129,6 +128,33 @@ For full **InferencePool v1** support (required by [llm-d](https://github.com/ll
 # Redeploy
 helmfile apply
 ```
+
+### Clean Upgrade (Recommended for version changes)
+
+When changing OSSM/Istio versions, do a clean upgrade to avoid stale resources:
+
+```bash
+# 1. Delete the Istio CR (triggers istiod cleanup)
+kubectl delete istio default -n istio-system
+
+# 2. Wait for istiod to be removed
+kubectl wait --for=delete pod -l app=istiod -n istio-system --timeout=120s
+
+# 3. Delete problematic CRDs (if switching major versions)
+kubectl delete crd ztunnels.sailoperator.io --ignore-not-found
+
+# 4. Update the bundle
+./scripts/update-bundle.sh 3.1.4 redhat
+
+# 5. Update istioVersion in values.yaml to match bundle
+# OSSM 3.1.x -> v1.26.x, OSSM 3.2.x -> v1.27.x
+sed -i 's/istioVersion: .*/istioVersion: "v1.26.6"/' values.yaml
+
+# 6. Redeploy
+helmfile apply
+```
+
+> **Note:** The `istio-cr.yaml` template uses `{{ .Values.istioVersion }}` so you must update values.yaml when changing OSSM versions.
 
 ## Update Pull Secret
 
