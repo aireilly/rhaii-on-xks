@@ -7,8 +7,19 @@ Infrastructure Helm charts for deploying llm-d on xKS platforms (AKS, EKS, GKE).
 | Component | App Version | Description |
 |-----------|-------------|-------------|
 | cert-manager-operator | 1.15.2 | TLS certificate management |
-| sail-operator (Istio) | 3.2.1 | Gateway API for inference routing |
+| sail-operator (Istio) | 3.1.4 | Gateway API for inference routing |
 | lws-operator | 1.0 | LeaderWorkerSet controller |
+
+### OSSM/Istio Version Compatibility
+
+| Sail Operator | Istio Version | InferencePool API | KServe Compatibility |
+|---------------|---------------|-------------------|----------------------|
+| **3.1.x** | **v1.26.x** | `inference.networking.x-k8s.io/v1alpha2` | **KServe v0.15** (uses v1alpha2) |
+| 3.2.x | v1.27.x | `inference.networking.k8s.io/v1` | Future KServe versions (v1 API) |
+
+> **Important:** KServe v0.15 creates InferencePool using the experimental `v1alpha2` API.
+> OSSM 3.2 watches the stable `v1` API, which is incompatible.
+> **Use OSSM 3.1.x (Istio 1.26.x) for KServe v0.15.**
 
 ## Prerequisites
 
@@ -37,7 +48,7 @@ Password: {REGISTRY-SERVICE-ACCOUNT-PASSWORD}
 Login Succeeded!
 
 # Verify it works
-$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.2
+$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.1
 ```
 
 Then configure `values.yaml`:
@@ -64,7 +75,7 @@ Password: {YOUR-REDHAT-PASSWORD}
 Login Succeeded!
 
 # Verify it works
-$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.2
+$ podman pull registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.1
 ```
 
 This stores credentials in `${XDG_RUNTIME_DIR}/containers/auth.json` or `~/.config/containers/auth.json`.
@@ -147,6 +158,35 @@ llm-d-infra-xks/
 └── scripts/
     └── copy-pull-secret.sh
 ```
+
+## Upgrading OSSM/Istio Version
+
+When changing OSSM versions (e.g., 3.1.x to 3.2.x), do a clean upgrade to avoid stale resources:
+
+```bash
+# 1. Delete the Istio CR (triggers istiod cleanup)
+kubectl delete istio default -n istio-system
+
+# 2. Wait for istiod to be removed
+kubectl wait --for=delete pod -l app=istiod -n istio-system --timeout=120s
+
+# 3. Delete problematic CRDs (if switching major versions)
+kubectl delete crd ztunnels.sailoperator.io --ignore-not-found
+
+# 4. Update sail-operator-chart to new bundle version
+cd charts/sail-operator
+./scripts/update-bundle.sh 3.1.4 redhat
+
+# 5. Update istioVersion in values.yaml to match bundle
+# OSSM 3.1.x -> v1.26.x, OSSM 3.2.x -> v1.27.x
+sed -i 's/istioVersion: .*/istioVersion: "v1.26.6"/' values.yaml
+
+# 6. Redeploy
+cd ../..
+make deploy-istio
+```
+
+> **Note:** The `istio-cr.yaml` template uses `{{ .Values.istioVersion }}` so you must update values.yaml when changing OSSM versions.
 
 ## Source Repositories
 
