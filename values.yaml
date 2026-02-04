@@ -5,7 +5,7 @@ namespace: istio-system
 
 bundle:
   source: redhat        # "redhat" or "konflux"
-  version: "3.0.7"
+  version: "3.2.1"
 
 pullSecret:
   name: redhat-pull-secret

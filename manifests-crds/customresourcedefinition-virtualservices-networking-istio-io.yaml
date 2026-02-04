@@ -630,12 +630,22 @@ spec:
                             description: Number of retries to be allowed for a given request.
                             format: int32
                             type: integer
+                          backoff:
+                            description: Specifies the minimum duration between retry attempts.
+                            type: string
+                            x-kubernetes-validations:
+                              - message: must be a valid duration greater than 1ms
+                                rule: duration(self) >= duration('1ms')
                           perTryTimeout:
                             description: Timeout per attempt for a given request, including the initial call and any retries.
                             type: string
                             x-kubernetes-validations:
                               - message: must be a valid duration greater than 1ms
                                 rule: duration(self) >= duration('1ms')
+                          retryIgnorePreviousHosts:
+                            description: Flag to specify whether the retries should ignore previously tried hosts during retry.
+                            nullable: true
+                            type: boolean
                           retryOn:
                             description: Specifies the conditions under which retry takes place.
                             type: string
@@ -900,6 +910,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -915,7 +931,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -950,7 +965,7 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: false
+      storage: true
       subresources:
         status: {}
     - additionalPrinterColumns:
@@ -1560,12 +1575,22 @@ spec:
                             description: Number of retries to be allowed for a given request.
                             format: int32
                             type: integer
+                          backoff:
+                            description: Specifies the minimum duration between retry attempts.
+                            type: string
+                            x-kubernetes-validations:
+                              - message: must be a valid duration greater than 1ms
+                                rule: duration(self) >= duration('1ms')
                           perTryTimeout:
                             description: Timeout per attempt for a given request, including the initial call and any retries.
                             type: string
                             x-kubernetes-validations:
                               - message: must be a valid duration greater than 1ms
                                 rule: duration(self) >= duration('1ms')
+                          retryIgnorePreviousHosts:
+                            description: Flag to specify whether the retries should ignore previously tried hosts during retry.
+                            nullable: true
+                            type: boolean
                           retryOn:
                             description: Specifies the conditions under which retry takes place.
                             type: string
@@ -1830,6 +1855,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -1845,7 +1876,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -2490,12 +2520,22 @@ spec:
                             description: Number of retries to be allowed for a given request.
                             format: int32
                             type: integer
+                          backoff:
+                            description: Specifies the minimum duration between retry attempts.
+                            type: string
+                            x-kubernetes-validations:
+                              - message: must be a valid duration greater than 1ms
+                                rule: duration(self) >= duration('1ms')
                           perTryTimeout:
                             description: Timeout per attempt for a given request, including the initial call and any retries.
                             type: string
                             x-kubernetes-validations:
                               - message: must be a valid duration greater than 1ms
                                 rule: duration(self) >= duration('1ms')
+                          retryIgnorePreviousHosts:
+                            description: Flag to specify whether the retries should ignore previously tried hosts during retry.
+                            nullable: true
+                            type: boolean
                           retryOn:
                             description: Specifies the conditions under which retry takes place.
                             type: string
@@ -2760,6 +2800,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -2775,7 +2821,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -2810,6 +2855,6 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: true
+      storage: false
       subresources:
         status: {}

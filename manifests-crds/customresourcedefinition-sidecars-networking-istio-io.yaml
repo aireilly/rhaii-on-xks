@@ -311,6 +311,13 @@ spec:
                           credentialName:
                             description: For gateways running on Kubernetes, the name of the secret that holds the TLS certs including the CA certificates.
                             type: string
+                          credentialNames:
+                            description: Same as CredentialName but for multiple certificates.
+                            items:
+                              type: string
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           httpsRedirect:
                             description: If set to true, the load balancer will send a 301 redirect for all http connections, asking the clients to use HTTPS.
                             type: boolean
@@ -362,6 +369,22 @@ spec:
                             items:
                               type: string
                             type: array
+                          tlsCertificates:
+                            description: Only one of `server_certificate`, `private_key` or `credential_name` or `credential_names` or `tls_certificates` should be specified.
+                            items:
+                              properties:
+                                caCertificates:
+                                  type: string
+                                privateKey:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                                serverCertificate:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                              type: object
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           verifyCertificateHash:
                             description: An optional list of hex-encoded SHA-256 hashes of the authorized client certificates.
                             items:
@@ -373,6 +396,13 @@ spec:
                               type: string
                             type: array
                         type: object
+                        x-kubernetes-validations:
+                          - message: only one of credentialNames or tlsCertificates can be set
+                            rule: '(has(self.tlsCertificates) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or credentialNames can be set
+                            rule: '(has(self.credentialName) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or tlsCertificates can be set
+                            rule: '(has(self.credentialNames) ? 1 : 0) + (has(self.tlsCertificates) ? 1 : 0) <= 1'
                     required:
                       - port
                     type: object
@@ -417,7 +447,7 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard is not supported in selector
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which the configuration should be applied.
                       maxProperties: 256
                       type: object
@@ -440,6 +470,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -455,7 +491,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -490,7 +525,7 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: false
+      storage: true
       subresources:
         status: {}
     - name: v1alpha3
@@ -783,6 +818,13 @@ spec:
                           credentialName:
                             description: For gateways running on Kubernetes, the name of the secret that holds the TLS certs including the CA certificates.
                             type: string
+                          credentialNames:
+                            description: Same as CredentialName but for multiple certificates.
+                            items:
+                              type: string
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           httpsRedirect:
                             description: If set to true, the load balancer will send a 301 redirect for all http connections, asking the clients to use HTTPS.
                             type: boolean
@@ -834,6 +876,22 @@ spec:
                             items:
                               type: string
                             type: array
+                          tlsCertificates:
+                            description: Only one of `server_certificate`, `private_key` or `credential_name` or `credential_names` or `tls_certificates` should be specified.
+                            items:
+                              properties:
+                                caCertificates:
+                                  type: string
+                                privateKey:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                                serverCertificate:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                              type: object
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           verifyCertificateHash:
                             description: An optional list of hex-encoded SHA-256 hashes of the authorized client certificates.
                             items:
@@ -845,6 +903,13 @@ spec:
                               type: string
                             type: array
                         type: object
+                        x-kubernetes-validations:
+                          - message: only one of credentialNames or tlsCertificates can be set
+                            rule: '(has(self.tlsCertificates) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or credentialNames can be set
+                            rule: '(has(self.credentialName) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or tlsCertificates can be set
+                            rule: '(has(self.credentialNames) ? 1 : 0) + (has(self.tlsCertificates) ? 1 : 0) <= 1'
                     required:
                       - port
                     type: object
@@ -889,7 +954,7 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard is not supported in selector
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which the configuration should be applied.
                       maxProperties: 256
                       type: object
@@ -912,6 +977,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -927,7 +998,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -1255,6 +1325,13 @@ spec:
                           credentialName:
                             description: For gateways running on Kubernetes, the name of the secret that holds the TLS certs including the CA certificates.
                             type: string
+                          credentialNames:
+                            description: Same as CredentialName but for multiple certificates.
+                            items:
+                              type: string
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           httpsRedirect:
                             description: If set to true, the load balancer will send a 301 redirect for all http connections, asking the clients to use HTTPS.
                             type: boolean
@@ -1306,6 +1383,22 @@ spec:
                             items:
                               type: string
                             type: array
+                          tlsCertificates:
+                            description: Only one of `server_certificate`, `private_key` or `credential_name` or `credential_names` or `tls_certificates` should be specified.
+                            items:
+                              properties:
+                                caCertificates:
+                                  type: string
+                                privateKey:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                                serverCertificate:
+                                  description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                  type: string
+                              type: object
+                            maxItems: 2
+                            minItems: 1
+                            type: array
                           verifyCertificateHash:
                             description: An optional list of hex-encoded SHA-256 hashes of the authorized client certificates.
                             items:
@@ -1317,6 +1410,13 @@ spec:
                               type: string
                             type: array
                         type: object
+                        x-kubernetes-validations:
+                          - message: only one of credentialNames or tlsCertificates can be set
+                            rule: '(has(self.tlsCertificates) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or credentialNames can be set
+                            rule: '(has(self.credentialName) ? 1 : 0) + (has(self.credentialNames) ? 1 : 0) <= 1'
+                          - message: only one of credentialName or tlsCertificates can be set
+                            rule: '(has(self.credentialNames) ? 1 : 0) + (has(self.tlsCertificates) ? 1 : 0) <= 1'
                     required:
                       - port
                     type: object
@@ -1361,7 +1461,7 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard is not supported in selector
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which the configuration should be applied.
                       maxProperties: 256
                       type: object
@@ -1384,6 +1484,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -1399,7 +1505,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -1434,6 +1539,6 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: true
+      storage: false
       subresources:
         status: {}

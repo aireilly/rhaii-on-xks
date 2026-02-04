@@ -28,7 +28,7 @@ spec:
           jsonPath: .spec.host
           name: Host
           type: string
-        - description: 'CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+        - description: CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. For more information, see [Kubernetes API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata)
           jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -754,6 +754,22 @@ spec:
                                   - V2
                                 type: string
                             type: object
+                          retryBudget:
+                            description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                            properties:
+                              minRetryConcurrency:
+                                description: Specifies the minimum retry concurrency allowed for the retry budget.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              percent:
+                                description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                                format: double
+                                maximum: 100
+                                minimum: 0
+                                nullable: true
+                                type: number
+                            type: object
                           tls:
                             description: TLS related settings for connections to the upstream service.
                             properties:
@@ -1514,6 +1530,22 @@ spec:
                             - V2
                           type: string
                       type: object
+                    retryBudget:
+                      description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                      properties:
+                        minRetryConcurrency:
+                          description: Specifies the minimum retry concurrency allowed for the retry budget.
+                          maximum: 4.294967295e+09
+                          minimum: 0
+                          type: integer
+                        percent:
+                          description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                          format: double
+                          maximum: 100
+                          minimum: 0
+                          nullable: true
+                          type: number
+                      type: object
                     tls:
                       description: TLS related settings for connections to the upstream service.
                       properties:
@@ -1584,13 +1616,13 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard not allowed in label value match
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which a policy should be applied.
                       maxProperties: 4096
                       type: object
                       x-kubernetes-validations:
                         - message: wildcard not allowed in label key match
-                          rule: self.all(key, !key.contains('*'))
+                          rule: self.all(key, !key.contains("*"))
                         - message: key must not be empty
                           rule: self.all(key, key.size() != 0)
                   type: object
@@ -1614,6 +1646,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -1629,7 +1667,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -1664,7 +1701,7 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: false
+      storage: true
       subresources:
         status: {}
     - additionalPrinterColumns:
@@ -1672,7 +1709,7 @@ spec:
           jsonPath: .spec.host
           name: Host
           type: string
-        - description: 'CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+        - description: CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. For more information, see [Kubernetes API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata)
           jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -2398,6 +2435,22 @@ spec:
                                   - V2
                                 type: string
                             type: object
+                          retryBudget:
+                            description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                            properties:
+                              minRetryConcurrency:
+                                description: Specifies the minimum retry concurrency allowed for the retry budget.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              percent:
+                                description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                                format: double
+                                maximum: 100
+                                minimum: 0
+                                nullable: true
+                                type: number
+                            type: object
                           tls:
                             description: TLS related settings for connections to the upstream service.
                             properties:
@@ -3158,6 +3211,22 @@ spec:
                             - V2
                           type: string
                       type: object
+                    retryBudget:
+                      description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                      properties:
+                        minRetryConcurrency:
+                          description: Specifies the minimum retry concurrency allowed for the retry budget.
+                          maximum: 4.294967295e+09
+                          minimum: 0
+                          type: integer
+                        percent:
+                          description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                          format: double
+                          maximum: 100
+                          minimum: 0
+                          nullable: true
+                          type: number
+                      type: object
                     tls:
                       description: TLS related settings for connections to the upstream service.
                       properties:
@@ -3228,13 +3297,13 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard not allowed in label value match
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which a policy should be applied.
                       maxProperties: 4096
                       type: object
                       x-kubernetes-validations:
                         - message: wildcard not allowed in label key match
-                          rule: self.all(key, !key.contains('*'))
+                          rule: self.all(key, !key.contains("*"))
                         - message: key must not be empty
                           rule: self.all(key, key.size() != 0)
                   type: object
@@ -3258,6 +3327,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -3273,7 +3348,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -3316,7 +3390,7 @@ spec:
           jsonPath: .spec.host
           name: Host
           type: string
-        - description: 'CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+        - description: CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for lists. For more information, see [Kubernetes API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata)
           jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -4042,6 +4116,22 @@ spec:
                                   - V2
                                 type: string
                             type: object
+                          retryBudget:
+                            description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                            properties:
+                              minRetryConcurrency:
+                                description: Specifies the minimum retry concurrency allowed for the retry budget.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              percent:
+                                description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                                format: double
+                                maximum: 100
+                                minimum: 0
+                                nullable: true
+                                type: number
+                            type: object
                           tls:
                             description: TLS related settings for connections to the upstream service.
                             properties:
@@ -4802,6 +4892,22 @@ spec:
                             - V2
                           type: string
                       type: object
+                    retryBudget:
+                      description: Specifies a limit on concurrent retries in relation to the number of active requests.
+                      properties:
+                        minRetryConcurrency:
+                          description: Specifies the minimum retry concurrency allowed for the retry budget.
+                          maximum: 4.294967295e+09
+                          minimum: 0
+                          type: integer
+                        percent:
+                          description: Specifies the limit on concurrent retries as a percentage of the sum of active requests and active pending requests.
+                          format: double
+                          maximum: 100
+                          minimum: 0
+                          nullable: true
+                          type: number
+                      type: object
                     tls:
                       description: TLS related settings for connections to the upstream service.
                       properties:
@@ -4872,13 +4978,13 @@ spec:
                         type: string
                         x-kubernetes-validations:
                           - message: wildcard not allowed in label value match
-                            rule: '!self.contains(''*'')'
+                            rule: '!self.contains("*")'
                       description: One or more labels that indicate a specific set of pods/VMs on which a policy should be applied.
                       maxProperties: 4096
                       type: object
                       x-kubernetes-validations:
                         - message: wildcard not allowed in label key match
-                          rule: self.all(key, !key.contains('*'))
+                          rule: self.all(key, !key.contains("*"))
                         - message: key must not be empty
                           rule: self.all(key, key.size() != 0)
                   type: object
@@ -4902,6 +5008,12 @@ spec:
                       message:
                         description: Human-readable message indicating details about last transition.
                         type: string
+                      observedGeneration:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: Resource Generation to which the Condition refers.
+                        x-kubernetes-int-or-string: true
                       reason:
                         description: Unique, one-word, CamelCase reason for the condition's last transition.
                         type: string
@@ -4917,7 +5029,6 @@ spec:
                   anyOf:
                     - type: integer
                     - type: string
-                  description: Resource Generation to which the Reconciled Condition refers.
                   x-kubernetes-int-or-string: true
                 validationMessages:
                   description: Includes any errors or warnings detected by Istio's analyzers.
@@ -4952,6 +5063,6 @@ spec:
               x-kubernetes-preserve-unknown-fields: true
           type: object
       served: true
-      storage: true
+      storage: false
       subresources:
         status: {}
