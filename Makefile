@@ -7,7 +7,6 @@ CONTAINER_TAG ?= latest
 CONTAINER_TOOL ?= podman
 HOST_KUBECONFIG ?= ~/.kube/config
 FROM ?= registry.fedoraproject.org/fedora:latest
-PIP ?= pip
 
 .PHONY: help test install uninstall lint pep8-fix
 
@@ -15,12 +14,16 @@ help:
 	@echo "Available targets:"
 	@echo "  container  Build a container image from the current directory"
 	@echo "  run        Run the container image"
-	@echo "  push  		Push the container image to the container registry"
+	@echo "  push       Push the container image to the container registry"
 	@echo "  lint       Check code for PEP8 compliance"
 	@echo "  pep8-fix   Automatically fix PEP8 compliance issues"
 	@echo ""
-	@echo "Configuration:"
-	@echo "  MAX_LINE_LENGTH=$(MAX_LINE_LENGTH) (can be overridden: make lint MAX_LINE_LENGTH=88)"
+	@echo "Configuration settings (all can be overridden by using environment variables):"
+	@echo "  MAX_LINE_LENGTH=$(MAX_LINE_LENGTH) Python linter line length"
+	@echo "  CONTAINER_REPO=$(CONTAINER_REPO) Container repository tag to use for build and run"
+	@echo "  CONTAINER_TAG=$(CONTAINER_TAG) Container tag to use for build and run"
+	@echo "  CONTAINER_TOOL=$(CONTAINER_TOOL) Container tool to use for build and run"
+	@echo "  HOST_KUBECONFIG=$(HOST_KUBECONFIG) Path to kubeconfig for container run"
 
 
 # Build a container image from the current directory
@@ -41,4 +44,4 @@ lint:
 
 # Automatically fix PEP8 compliance issues
 pep8-fix:
-	autopep8 --max-line-length=$(MAX_LINE_LENGTH) --in-place --recursive . 
+	autopep8 --max-line-length=$(MAX_LINE_LENGTH) --in-place --recursive .
