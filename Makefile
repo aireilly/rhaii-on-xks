@@ -10,7 +10,7 @@ check-kubeconfig:
 	@kubectl cluster-info >/dev/null 2>&1 || (echo "ERROR: Cannot connect to cluster. Check KUBECONFIG." && exit 1)
 
 help:
-	@echo "llm-d-infra-xks - Infrastructure for llm-d on xKS (AKS/CoreWeave)"
+	@echo "rhaii-on-xks - Infrastructure for llm-d on xKS (AKS/CoreWeave)"
 	@echo ""
 	@echo "Deploy:"
 	@echo "  make deploy              - Deploy cert-manager + istio"

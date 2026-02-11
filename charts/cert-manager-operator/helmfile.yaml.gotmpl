@@ -1,14 +1,11 @@
 # cert-manager Operator Helmfile
 #
-# Usage:
-#   1. Edit environments/default.yaml (set auth method)
-#   2. Run: helmfile apply
+# Deployed via the root helmfile (values passed from root values.yaml)
 
 environments:
   default:
     values:
       - values.yaml
-      - environments/default.yaml
 
 ---
 

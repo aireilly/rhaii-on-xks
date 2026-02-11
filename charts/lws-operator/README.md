@@ -26,17 +26,16 @@ LWS provides an API for deploying a group of pods as a unit of replication, desi
 
 ## Quick Start
 
+This chart is part of the [rhaii-on-xks](https://github.com/opendatahub-io/rhaii-on-xks) monorepo and is deployed via the top-level helmfile:
+
 ```bash
-# 1. Clone the chart
-git clone https://github.com/aneeshkp/lws-operator-chart.git
-cd lws-operator-chart
+# From the repo root
+make deploy-lws
 
-# 2. Setup pull secret (see Configuration below)
+# Or selectively via helmfile
+helmfile apply --selector name=lws-operator
 
-# 3. Deploy
-helmfile apply
-
-# 4. Verify
+# Verify
 kubectl get pods -n openshift-lws-operator
 kubectl get leaderworkersetoperator cluster
 ```
@@ -206,7 +205,7 @@ See `test/README.md` for detailed test documentation.
 ## File Structure
 
 ```
-lws-operator-chart/
+charts/lws-operator/
 ├── Chart.yaml
 ├── Makefile                     # make deploy, make test, etc.
 ├── values.yaml                  # Default values

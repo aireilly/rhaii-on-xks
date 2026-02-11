@@ -20,17 +20,16 @@ This chart uses **olm-extractor** to extract manifests directly from Red Hat's O
 
 ## Quick Start
 
+This chart is part of the [rhaii-on-xks](https://github.com/opendatahub-io/rhaii-on-xks) monorepo and is deployed via the top-level helmfile:
+
 ```bash
-# 1. Clone the chart
-git clone https://github.com/aneeshkp/cert-manager-operator-chart.git
-cd cert-manager-operator-chart
+# From the repo root
+make deploy-cert-manager
 
-# 2. Setup pull secret (see Configuration below)
+# Or selectively via helmfile
+helmfile apply --selector name=cert-manager-operator
 
-# 3. Deploy
-helmfile apply
-
-# 4. Verify
+# Verify
 kubectl get pods -n cert-manager-operator
 kubectl get pods -n cert-manager
 ```
@@ -172,7 +171,7 @@ This chart includes workarounds for running the Red Hat operator outside OpenShi
 ## File Structure
 
 ```
-cert-manager-operator-chart/
+charts/cert-manager-operator/
 ├── Chart.yaml
 ├── values.yaml                  # Default values
 ├── helmfile.yaml.gotmpl         # Deploy with: helmfile apply

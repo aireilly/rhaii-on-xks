@@ -88,29 +88,27 @@ We use Red Hat-supported operator bundles because:
 ### Repository Structure
 
 ```
-llm-d-infra-xks/                    # Main orchestrator
-├── helmfile.yaml.gotmpl            # Imports operator charts
-├── values.yaml                     # Configuration
-└── Makefile                        # make deploy, make status
-
-cert-manager-operator-chart/        # Extracted operator
-├── manifests-crds/                 # CRDs (applied via presync)
-├── templates/                      # Operator deployment, RBAC
-├── scripts/update-bundle.sh        # Re-extract from newer bundle
-└── helmfile.yaml.gotmpl
-
-sail-operator-chart/                # Extracted operator
-├── manifests-crds/                 # 19 Istio CRDs
-├── manifests-presync/              # Namespace, ServiceAccounts
-├── templates/                      # Operator deployment, Istio CR
-├── scripts/update-bundle.sh
-└── helmfile.yaml.gotmpl
-
-lws-operator-chart/                 # Extracted operator
-├── manifests-crds/
-├── templates/
-├── scripts/update-bundle.sh
-└── helmfile.yaml.gotmpl
+rhaii-on-xks/                           # Monorepo
+├── helmfile.yaml.gotmpl                # Imports operator charts (local paths)
+├── values.yaml                         # Configuration
+├── Makefile                            # make deploy, make status
+└── charts/
+    ├── cert-manager-operator/          # Extracted operator
+    │   ├── crds/                       # CRDs (applied via presync)
+    │   ├── templates/                  # Operator deployment, RBAC
+    │   ├── scripts/update-bundle.sh    # Re-extract from newer bundle
+    │   └── helmfile.yaml.gotmpl
+    ├── sail-operator/                  # Extracted operator
+    │   ├── crds/                       # 19 Istio CRDs
+    │   ├── manifests-presync/          # Namespace, ServiceAccounts
+    │   ├── templates/                  # Operator deployment, Istio CR
+    │   ├── scripts/update-bundle.sh
+    │   └── helmfile.yaml.gotmpl
+    └── lws-operator/                   # Extracted operator
+        ├── crds/
+        ├── templates/
+        ├── scripts/update-bundle.sh
+        └── helmfile.yaml.gotmpl
 ```
 
 ### Deployment Flow
@@ -118,19 +116,19 @@ lws-operator-chart/                 # Extracted operator
 ```
 User runs: make deploy
     │
-    ├── helmfile apply (llm-d-infra-xks)
+    ├── helmfile apply (rhaii-on-xks)
     │       │
-    │       ├── Import cert-manager-operator-chart
+    │       ├── Import charts/cert-manager-operator
     │       │       ├── presync: Apply CRDs
     │       │       └── install: Deploy operator
     │       │
-    │       ├── Import sail-operator-chart
+    │       ├── Import charts/sail-operator
     │       │       ├── presync: Apply Gateway API CRDs
     │       │       ├── presync: Apply Istio CRDs
     │       │       ├── install: Deploy operator + Istio CR
     │       │       └── postsync: Fix webhook loop workaround
     │       │
-    │       └── Import lws-operator-chart
+    │       └── Import charts/lws-operator
     │               ├── presync: Apply CRDs
     │               └── install: Deploy operator
     │
@@ -175,8 +173,8 @@ kubectl annotate mutatingwebhookconfiguration istio-sidecar-injector \
 2. Customer obtains Red Hat pull secret
 3. Deploy infrastructure:
    ```bash
-   git clone https://github.com/aneeshkp/llm-d-infra-xks
-   cd llm-d-infra-xks
+   git clone https://github.com/opendatahub-io/rhaii-on-xks
+   cd rhaii-on-xks
    make deploy-all
    ```
 4. Deploy KServe controller:
@@ -190,14 +188,14 @@ kubectl annotate mutatingwebhookconfiguration istio-sidecar-injector \
 When new operator versions are released:
 ```bash
 # Update each chart
-cd cert-manager-operator-chart
+cd charts/cert-manager-operator
 ./scripts/update-bundle.sh v1.16.0
 
-cd sail-operator-chart
+cd ../sail-operator
 ./scripts/update-bundle.sh 3.3.0
 
-# Redeploy
-cd llm-d-infra-xks
+# Redeploy from repo root
+cd ../..
 make deploy
 ```
 

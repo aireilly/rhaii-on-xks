@@ -2,11 +2,11 @@ helmDefaults:
   wait: true
   timeout: 600
 
+# Deployed via the root helmfile (values passed from root values.yaml)
 environments:
   default:
     values:
       - values.yaml
-      - environments/default.yaml
 
 ---
 
@@ -19,7 +19,6 @@ releases:
     createNamespace: true
     values:
       - values.yaml
-      - environments/default.yaml
 {{- if .Values.useSystemPodmanAuth }}
       - pullSecret:
           dockerConfigJson: {{ exec "cat" (list (env "HOME" | printf "%s/.config/containers/auth.json")) | quote }}

@@ -1,8 +1,0 @@
-# Ignore everything except templates and Chart.yaml
-scripts/
-environments/
-helmfile.yaml.gotmpl
-ARCHITECTURE.md
-*.md
-.git/
-.gitignore

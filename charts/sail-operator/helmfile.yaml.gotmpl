@@ -1,19 +1,11 @@
 # Sail Operator Helmfile
 #
-# Usage:
-#   1. Edit environments/default.yaml (set pullSecretFile OR authFile)
-#   2. Run: helmfile apply
-#
-# Auth options (set ONE):
-#   pullSecretFile: /path/to/pull-secret.txt    # OpenShift pull secret
-#   authFile: ~/.config/containers/auth.json    # Podman (after: podman login registry.redhat.io)
-#   authFile: ~/.docker/config.json             # Docker (after: docker login registry.redhat.io)
+# Deployed via the root helmfile (values passed from root values.yaml)
 
 environments:
   default:
     values:
-      - values.yaml                    # Defaults
-      - environments/default.yaml      # User overrides
+      - values.yaml
 
 ---
 
@@ -65,8 +57,10 @@ releases:
         args: ["apply", "-k", "https://github.com/kubernetes-sigs/gateway-api-inference-extension/config/crd?ref={{ .Values.gatewayAPI.inferenceExtension.version }}"]
 {{- end }}
       # Note: Sail Operator CRDs are now in crds/ directory and installed by Helm with SSA
+{{- if .Values.fixWebhookLoop.enabled }}
       # Fix webhook reconciliation loop (vanilla Kubernetes only)
       - events: ["postsync"]
         showlogs: true
         command: "bash"
         args: ["scripts/fix-webhook-loop.sh", "{{ .Values.namespace }}"]
+{{- end }}

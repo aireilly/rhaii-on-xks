@@ -19,7 +19,7 @@
 #   GATEWAY_NAME=inference-gateway
 #
 # Prerequisites:
-#   - llm-d-infra-xks deployed (make deploy)
+#   - rhaii-on-xks deployed (make deploy)
 #   - cert-manager CA certificate issued
 #   - GatewayClass 'istio' available
 
@@ -75,7 +75,7 @@ setup_ca_bundle() {
   if [[ -z "$ca_cert" ]]; then
     log_error "Could not extract CA certificate from ${CA_SECRET_NAME} secret in ${CERT_MANAGER_NAMESPACE}"
     log_error "Make sure cert-manager is installed and the CA certificate has been issued."
-    log_error "Run 'make deploy' first to deploy llm-d-infra-xks."
+    log_error "Run 'make deploy' first to deploy rhaii-on-xks."
     return 1
   fi
 
@@ -133,7 +133,7 @@ create_gateway() {
   # Check if GatewayClass 'istio' exists
   if ! kubectl get gatewayclass istio &>/dev/null; then
     log_error "GatewayClass 'istio' not found. Make sure Istio/Sail Operator is installed."
-    log_error "Run 'make deploy' first to deploy llm-d-infra-xks."
+    log_error "Run 'make deploy' first to deploy rhaii-on-xks."
     return 1
   fi
 

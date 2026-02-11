@@ -19,10 +19,10 @@ Deploy Red Hat Leader Worker Set (LWS) Operator on vanilla Kubernetes (AKS, EKS,
 │                        Helm Chart                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Presync (helmfile)                                             │
-│  ├── LeaderWorkerSetOperator CRD (server-side apply)            │
 │  └── openshift-lws-operator namespace                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  Helm Install                                                   │
+│  Helm Install (with Server-Side Apply)                          │
+│  ├── LeaderWorkerSetOperator CRD from crds/ (Helm SSA, 3.17+)  │
 │  ├── Pull secret (redhat-pull-secret)                           │
 │  ├── LWS Operator ServiceAccount with imagePullSecrets          │
 │  ├── LWS Operator deployment + RBAC                             │
@@ -133,15 +133,15 @@ imagePullSecrets:
 ## File Structure
 
 ```
-lws-operator-chart/
+charts/lws-operator/
 ├── Chart.yaml                             # Helm chart metadata
 ├── values.yaml                            # Default values
 ├── helmfile.yaml.gotmpl                   # Helmfile for deployment
 ├── .helmignore
 ├── environments/
 │   └── default.yaml                       # Environment config
-├── manifests-crds/
-│   └── customresourcedefinition-*.yaml    # LeaderWorkerSetOperator CRD
+├── crds/
+│   └── customresourcedefinition-*.yaml    # LeaderWorkerSetOperator CRD (installed by Helm with SSA)
 ├── templates/
 │   ├── deployment-*.yaml                  # Operator deployment
 │   ├── serviceaccount-*.yaml              # Operator SA with imagePullSecrets

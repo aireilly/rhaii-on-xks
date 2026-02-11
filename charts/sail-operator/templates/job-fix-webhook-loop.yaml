@@ -23,7 +23,7 @@ spec:
       serviceAccountName: servicemesh-operator3
       containers:
         - name: fix-webhook
-          image: bitnami/kubectl:latest
+          image: {{ .Values.fixWebhookLoop.image | default "registry.k8s.io/kubectl:v1.31.4" }}
           command:
             - /bin/sh
             - -c

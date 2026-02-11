@@ -11,17 +11,16 @@ Deploy Red Hat Sail Operator (OSSM 3.x / Istio 1.27) on any Kubernetes cluster w
 
 ## Quick Start
 
+This chart is part of the [rhaii-on-xks](https://github.com/opendatahub-io/rhaii-on-xks) monorepo and is deployed via the top-level helmfile:
+
 ```bash
-# 1. Clone the chart
-git clone https://github.com/aneeshkp/sail-operator-chart.git
-cd sail-operator-chart
+# From the repo root
+make deploy-istio
 
-# 2. Setup pull secret (see Configuration below)
+# Or selectively via helmfile
+helmfile apply --selector name=sail-operator
 
-# 3. Deploy
-helmfile apply
-
-# 4. Verify
+# Verify
 kubectl get pods -n istio-system
 ```
 
@@ -83,7 +82,7 @@ gatewayAPI:
     enabled: false  # KServe installs these CRDs
 ```
 
-> **Note:** Gateway API CRDs are still installed by sail-operator-chart since KServe doesn't include them in its kustomize configuration.
+> **Note:** Gateway API CRDs are still installed by the sail-operator chart since KServe doesn't include them in its kustomize configuration.
 
 ## What Gets Deployed
 
@@ -121,12 +120,11 @@ gatewayAPI:
 
 | Sail Operator | Istio Version | InferencePool API | KServe Compatibility |
 |---------------|---------------|-------------------|----------------------|
-| **3.1.x** | **v1.26.x** | `inference.networking.x-k8s.io/v1alpha2` | **KServe v0.15** (uses v1alpha2) |
-| 3.2.x | v1.27.x | `inference.networking.k8s.io/v1` | Future KServe versions (v1 API) |
+| 3.1.x | v1.26.x | `inference.networking.x-k8s.io/v1alpha2` | KServe v0.15 (older builds using v1alpha2) |
+| **3.2.x** | **v1.27.x** | `inference.networking.k8s.io/v1` | **KServe v0.15** (uses v1 API) |
 
-> **Important:** KServe v0.15 creates InferencePool using the experimental `v1alpha2` API (`inference.networking.x-k8s.io`).
-> OSSM 3.2 watches the stable `v1` API (`inference.networking.k8s.io`), which is incompatible.
-> **Use OSSM 3.1.x (Istio 1.26.x) for KServe v0.15.**
+> **Note:** KServe v0.15 now uses the stable `v1` InferencePool API (`inference.networking.k8s.io`).
+> **Use OSSM 3.2.x (Istio v1.27.x) for KServe v0.15.**
 
 ### Bundle Version to Istio Version Mapping
 
@@ -276,7 +274,7 @@ helm list -n istio-system  # Revision should stop incrementing
 ## File Structure
 
 ```
-sail-operator-chart/
+charts/sail-operator/
 ├── Chart.yaml
 ├── values.yaml                  # Default values
 ├── helmfile.yaml.gotmpl         # Deploy with: helmfile apply

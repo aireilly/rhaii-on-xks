@@ -1,6 +1,8 @@
-# llm-d-infra-xks
+# rhaii-on-xks
 
-Infrastructure Helm charts for deploying KServe LLMInferenceService on xKS platforms (AKS, CoreWeave).
+Infrastructure Helm charts for deploying Red Hat AI Inference Server (KServe LLMInferenceService) on managed Kubernetes platforms (AKS, CoreWeave).
+
+> **Getting started?** See the [Deploying Red Hat AI Inference Server on Managed Kubernetes](./docs/deploying-llm-d-on-managed-kubernetes.md) guide for step-by-step deployment instructions.
 
 ## Related Repositories
 
@@ -94,8 +96,8 @@ useSystemPodmanAuth: true
 ### Step 1: Deploy Infrastructure
 
 ```bash
-git clone https://github.com/aneeshkp/llm-d-infra-xks.git
-cd llm-d-infra-xks
+git clone https://github.com/opendatahub-io/rhaii-on-xks.git
+cd rhaii-on-xks
 
 # Deploy cert-manager + istio + lws
 make deploy-all
@@ -380,6 +382,18 @@ This enables KServe to automatically create `PodMonitor` resources for vLLM pods
 
 ---
 
+## Collecting Debug Information
+
+If you encounter issues, collect diagnostic information for troubleshooting or to share with Red Hat support:
+
+```bash
+./scripts/collect-debug-info.sh
+```
+
+This collects logs, status, and events from all components (cert-manager, Istio, LWS, KServe) into a single directory. See the [Collecting Debug Information](./docs/collecting-debug-information.md) guide for details.
+
+---
+
 ## Troubleshooting
 
 ### KServe Controller Issues
@@ -468,22 +482,26 @@ The odh-xks overlay creates an OpenDataHub-scoped CA:
 ## Structure
 
 ```
-llm-d-infra-xks/
+rhaii-on-xks/
 ├── helmfile.yaml.gotmpl
 ├── values.yaml
 ├── Makefile
 ├── README.md
+├── charts/
+│   ├── cert-manager-operator/    # cert-manager operator Helm chart
+│   ├── sail-operator/            # Sail/Istio operator Helm chart
+│   └── lws-operator/             # LWS operator Helm chart
 └── scripts/
     ├── cleanup.sh             # Cleanup infrastructure (helmfile destroy + finalizers)
     └── setup-gateway.sh       # Set up Gateway with CA bundle for mTLS
 ```
 
-## Source Repositories
+## Operator Charts
 
-Operator helmfiles are imported from:
+Operator Helm charts are included locally under `charts/`:
 
-- https://github.com/aneeshkp/cert-manager-operator-chart
-- https://github.com/aneeshkp/sail-operator-chart
-- https://github.com/aneeshkp/lws-operator-chart
+- `charts/cert-manager-operator/` — cert-manager operator
+- `charts/sail-operator/` — Sail/Istio operator
+- `charts/lws-operator/` — LeaderWorkerSet operator
 
-This approach imports the full helmfiles including presync hooks for CRD installation.
+The helmfile imports these local charts including presync hooks for CRD installation.

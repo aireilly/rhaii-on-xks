@@ -1,5 +1,4 @@
 # cert-manager Operator Helm Chart - Default Values
-# Override in environments/default.yaml
 
 # Namespaces
 operatorNamespace: cert-manager-operator
@@ -10,17 +9,10 @@ bundle:
   version: "v1.15.2"
 
 # Pull secret for registry.redhat.io
+# Auth is configured in the root values.yaml and passed via helmfile
 pullSecret:
   name: redhat-pull-secret
-  dockerConfigJson: ""  # Set via --set-file or environments/default.yaml
-
-# Auth source (set ONE of these in environments/default.yaml):
-#   useSystemPodmanAuth: true                    # Use ~/.config/containers/auth.json (persistent)
-#   pullSecretFile: /path/to/pull-secret.txt    # OpenShift pull secret file
-#   authFile: ~/.config/containers/auth.json    # Custom auth file path
-useSystemPodmanAuth: false
-pullSecretFile: ""
-authFile: ""
+  dockerConfigJson: ""  # Set automatically by helmfile from root auth config
 
 # CertManager CR settings (deployed after operator is ready)
 certManager:

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cleanup script for llm-d-infra-xks
+# Cleanup script for rhaii-on-xks
 # Runs helmfile destroy and cleans up presync/template resources
 
 set -e

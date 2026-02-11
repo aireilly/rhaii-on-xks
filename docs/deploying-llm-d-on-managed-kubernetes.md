@@ -28,8 +28,9 @@ This guide provides step-by-step instructions for deploying Red Hat AI Inference
 6. [Deploying an LLM Inference Service](#6-deploying-an-llm-inference-service)
 7. [Verifying the Deployment](#7-verifying-the-deployment)
 8. [Optional: Enabling Monitoring](#8-optional-enabling-monitoring)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Appendix: Component Versions](#appendix-component-versions)
+9. [Collecting Debug Information](#9-collecting-debug-information)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Appendix: Component Versions](#appendix-component-versions)
 
 ---
 
@@ -156,8 +157,8 @@ Red Hat AI Inference Server on managed Kubernetes consists of the following comp
 ### 3.1 Clone the Deployment Repository
 
 ```bash
-git clone https://github.com/aneeshkp/llm-d-infra-xks.git
-cd llm-d-infra-xks
+git clone https://github.com/opendatahub-io/rhaii-on-xks.git
+cd rhaii-on-xks
 ```
 
 ### 3.2 Deploy Infrastructure
@@ -436,9 +437,38 @@ kubectl get podmonitors -n <llmisvc-namespace>
 
 ---
 
-## 9. Troubleshooting
+## 9. Collecting Debug Information
 
-### 9.1 Controller Pod Stuck in ContainerCreating
+If you encounter issues during or after deployment, collect diagnostic data for troubleshooting:
+
+```bash
+./scripts/collect-debug-info.sh
+```
+
+This produces a directory containing logs, resource status, certificate info, and warning events for all components. To package for sharing with Red Hat support:
+
+```bash
+tar -czf rhaii-debug.tar.gz -C /tmp rhaii-on-xks-debug-*
+```
+
+**What is collected:**
+
+| Category | Details |
+|----------|---------|
+| Cluster | Kubernetes version, node info, Helm releases |
+| cert-manager | Operator/controller/webhook logs, certificates, issuers |
+| Istio | Sail operator/istiod logs, gateways, HTTPRoutes, InferencePools |
+| LWS | Operator logs, LeaderWorkerSets, webhook configs |
+| KServe | Controller logs, LLMInferenceServices, gateway status |
+| Events | Warning/error events from all operator namespaces |
+
+See the full guide: [Collecting Debug Information](./collecting-debug-information.md)
+
+---
+
+## 10. Troubleshooting
+
+### 10.1 Controller Pod Stuck in ContainerCreating
 
 **Symptom:** The `kserve-controller-manager` pod remains in `ContainerCreating` state.
 
@@ -451,7 +481,7 @@ kubectl apply -k "https://github.com/opendatahub-io/kserve/config/overlays/odh-t
 kubectl wait --for=condition=Ready certificate/kserve-webhook-server -n opendatahub --timeout=120s
 ```
 
-### 9.2 Gateway Pod Shows ErrImagePull
+### 10.2 Gateway Pod Shows ErrImagePull
 
 **Symptom:** The Gateway pod fails with `ErrImagePull` or `ImagePullBackOff`.
 
@@ -470,7 +500,7 @@ kubectl patch sa inference-gateway-istio -n opendatahub \
 kubectl delete pod -n opendatahub -l gateway.networking.k8s.io/gateway-name=inference-gateway
 ```
 
-### 9.3 LLMInferenceService Pod Shows FailedScheduling
+### 10.3 LLMInferenceService Pod Shows FailedScheduling
 
 **Symptom:** The inference pod shows `FailedScheduling` with message "Insufficient nvidia.com/gpu".
 
@@ -490,7 +520,7 @@ kubectl delete pod -n opendatahub -l gateway.networking.k8s.io/gateway-name=infe
 
 3. Add matching tolerations to the LLMInferenceService spec (see Section 6.3).
 
-### 9.4 Webhook Validation Errors During Deployment
+### 10.4 Webhook Validation Errors During Deployment
 
 **Symptom:** Deployment fails with "no endpoints available for service" webhook errors.
 

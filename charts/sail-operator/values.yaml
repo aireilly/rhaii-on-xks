@@ -1,5 +1,4 @@
 # Sail Operator Helm Chart - Default Values
-# Override in environments/default.yaml
 
 namespace: istio-system
 
@@ -11,17 +10,11 @@ bundle:
 # OSSM 3.1.x -> v1.26.x, OSSM 3.2.x -> v1.27.x, OSSM 3.3.x -> v1.28.x
 istioVersion: "v1.27-latest"
 
+# Pull secret for registry.redhat.io
+# Auth is configured in the root values.yaml and passed via helmfile
 pullSecret:
   name: redhat-pull-secret
-  dockerConfigJson: ""  # Set via --set-file or environments/default.yaml
-
-# Auth source (set ONE of these in environments/default.yaml):
-#   useSystemPodmanAuth: true                    # Use ~/.config/containers/auth.json (persistent, recommended)
-#   pullSecretFile: /path/to/pull-secret.txt     # OpenShift pull secret file
-#   authFile: ~/.config/containers/auth.json     # Custom auth file path
-useSystemPodmanAuth: false
-pullSecretFile: ""
-authFile: ""
+  dockerConfigJson: ""  # Set automatically by helmfile from root auth config
 
 # Gateway API CRD versions (applied via presync hooks)
 gatewayAPI:
@@ -38,6 +31,7 @@ gatewayAPI:
 # Creates a Job that annotates webhooks with sailoperator.io/ignore=true
 fixWebhookLoop:
   enabled: true
+  image: "registry.k8s.io/kubectl:v1.31.4"
 
 # Inference Gateway for KServe/llm-d
 # Creates Gateway with CA bundle mount for mTLS to backend services

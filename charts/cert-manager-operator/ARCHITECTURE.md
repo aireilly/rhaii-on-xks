@@ -20,12 +20,12 @@ Deploy Red Hat cert-manager Operator on vanilla Kubernetes (AKS, EKS, GKE) witho
 │                        Helm Chart                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Presync (helmfile)                                             │
-│  ├── CRDs (server-side apply)                                   │
 │  ├── Infrastructure CRD/CR stub                                 │
 │  ├── cert-manager namespace                                     │
 │  └── CertManager CR                                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  Helm Install                                                   │
+│  Helm Install (with Server-Side Apply)                          │
+│  ├── CRDs from crds/ directory (Helm SSA, 3.17+)               │
 │  ├── cert-manager-operator namespace                            │
 │  ├── Pull secrets (both namespaces)                             │
 │  ├── ServiceAccounts with imagePullSecrets                      │
@@ -125,13 +125,13 @@ The operator uses **strategic merge patch** when reconciling, so it:
 ## File Structure
 
 ```
-cert-manager-operator-chart/
+charts/cert-manager-operator/
 ├── Chart.yaml                             # Helm chart metadata
 ├── values.yaml                            # Default values
 ├── helmfile.yaml.gotmpl                   # Helmfile for deployment
 ├── environments/
 │   └── default.yaml                       # Environment config
-├── manifests-crds/                        # CRDs (applied with --server-side)
+├── crds/                                  # CRDs (installed by Helm with SSA)
 │   ├── customresourcedefinition-*.yaml    # cert-manager CRDs
 │   └── customresourcedefinition-infrastructures-*.yaml  # Stub CRD
 ├── templates/

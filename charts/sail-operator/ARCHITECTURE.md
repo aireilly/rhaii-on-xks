@@ -24,10 +24,10 @@ Deploy Red Hat Sail Operator (OSSM 3.x) on vanilla Kubernetes (AKS, EKS, GKE) wi
 │  ├── istiod ServiceAccount with imagePullSecrets                │
 │  │   (pre-created with operator's Helm annotations)             │
 │  ├── Gateway API CRDs (v1.4.0)                                  │
-│  ├── Gateway API Inference Extension CRDs (v1.2.0)              │
-│  └── Sail Operator CRDs (19 Istio CRDs, server-side apply)      │
+│  └── Gateway API Inference Extension CRDs (v1.2.0)              │
 ├─────────────────────────────────────────────────────────────────┤
-│  Helm Install                                                   │
+│  Helm Install (with Server-Side Apply)                          │
+│  ├── Sail Operator CRDs from crds/ (Helm SSA, 3.17+)           │
 │  ├── Pull secret (redhat-pull-secret)                           │
 │  ├── Sail Operator deployment + RBAC                            │
 │  └── Istio CR (with Gateway API enabled)                        │
@@ -171,14 +171,14 @@ Gateway SAs are created dynamically per-namespace when Gateway resources are dep
 ## File Structure
 
 ```
-sail-operator-chart/
+charts/sail-operator/
 ├── Chart.yaml                             # Helm chart metadata
 ├── values.yaml                            # Default values
 ├── helmfile.yaml.gotmpl                   # Helmfile for deployment
 ├── .helmignore                            # Excludes large CRDs from Helm
 ├── environments/
 │   └── default.yaml                       # Environment config
-├── manifests-crds/                        # CRDs (applied with --server-side)
+├── crds/                                  # CRDs (installed by Helm with SSA)
 │   ├── customresourcedefinition-istios-*.yaml
 │   └── ... (19 Istio CRDs)
 ├── manifests-presync/                     # Resources applied before Helm install
@@ -235,7 +235,7 @@ When users create Gateway resources, Istio automatically:
 
 These pods need pull secrets, hence the manual `copy-pull-secret.sh` step.
 
-## Comparison with cert-manager-operator-chart
+## Comparison with cert-manager-operator
 
 | Aspect | cert-manager | sail-operator |
 |--------|--------------|---------------|

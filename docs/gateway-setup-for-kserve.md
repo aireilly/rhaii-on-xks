@@ -1,7 +1,7 @@
 # Gateway Setup for KServe Integration
 
 This guide explains how to set up the inference Gateway with CA bundle mounting
-when using llm-d-infra-xks with KServe.
+when using rhaii-on-xks with KServe.
 
 ## Why is this needed?
 
@@ -14,8 +14,8 @@ needs this CA to trust the backend services it routes traffic to.
 
 ## Prerequisites
 
-- llm-d-infra-xks deployed (`make deploy` or `make deploy-all`)
-- cert-manager CA certificate issued (created automatically by llm-d-infra-xks)
+- rhaii-on-xks deployed (`make deploy` or `make deploy-all`)
+- cert-manager CA certificate issued (created automatically by rhaii-on-xks)
 - KServe deployed with odh-xks overlay
 
 ## Automated Setup
