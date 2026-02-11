@@ -28,10 +28,9 @@ gatewayAPI:
     version: "v1.2.0"
 
 # Fix webhook reconciliation loop (vanilla Kubernetes only)
-# Creates a Job that annotates webhooks with sailoperator.io/ignore=true
+# Helmfile postsync runs scripts/fix-webhook-loop.sh to annotate webhooks
 fixWebhookLoop:
   enabled: true
-  image: "registry.k8s.io/kubectl:v1.31.4"
 
 # Inference Gateway for KServe/llm-d
 # Creates Gateway with CA bundle mount for mTLS to backend services

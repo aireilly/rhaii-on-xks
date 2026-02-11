@@ -55,7 +55,7 @@ rm -rf ~/.cache/helmfile/git 2>/dev/null || true
 
 # Run helmfile destroy
 log "Running helmfile destroy..."
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || { error "Failed to cd to repo root"; exit 1; }
 helmfile destroy 2>/dev/null || true
 
 # Remove finalizers from stuck resources
@@ -79,6 +79,27 @@ timeout 10 kubectl delete infrastructure cluster --ignore-not-found 2>/dev/null 
 # Delete cert-manager webhook secret (forces CA regeneration on redeploy)
 log "Deleting cert-manager webhook secret..."
 kubectl delete secret cert-manager-webhook-ca -n cert-manager --ignore-not-found 2>/dev/null || true
+
+# Delete CRDs installed by this repo (Helm does not remove CRDs on uninstall)
+log "Cleaning up CRDs..."
+CRDS=$(kubectl get crd -o name 2>/dev/null || true)
+# Sail Operator / Istio CRDs
+echo "$CRDS" | grep -E "sailoperator\.io|\.istio\.io" | while read -r crd; do
+    kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
+done
+# cert-manager CRDs
+echo "$CRDS" | grep -E "\.cert-manager\.io" | while read -r crd; do
+    kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
+done
+# LWS and cert-manager operator CRDs (exact names to avoid matching other OpenShift operators)
+kubectl delete crd certmanagers.operator.openshift.io leaderworkersetoperators.operator.openshift.io --ignore-not-found 2>/dev/null || true
+# Gateway API CRDs and Inference Extension CRDs (InferencePool, InferenceModel)
+# Matches both inference.networking.k8s.io (v1) and inference.networking.x-k8s.io (v1alpha2)
+echo "$CRDS" | grep -E "gateway\.networking\.k8s\.io|inference\.networking\.k8s\.io|inference\.networking\.x-k8s\.io" | while read -r crd; do
+    kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
+done
+# Infrastructure stub CRD
+kubectl delete crd infrastructures.config.openshift.io --ignore-not-found 2>/dev/null || true
 
 # Clean up presync-created namespaces
 log "Cleaning up namespaces..."
