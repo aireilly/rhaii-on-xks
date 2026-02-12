@@ -220,7 +220,7 @@ class LLMDXKSChecks:
             return True
 
     def test_instance_type(self):
-        def azure_instance_type(self):
+        def azure_instance_type():
             instance_types = {
                 "Standard_NC24ads_A100_v4": 0,
                 "Standard_ND96asr_v4": 0,
@@ -231,9 +231,14 @@ class LLMDXKSChecks:
             nodes = self.k8s_core_api.list_node()
             for node in nodes.items:
                 labels = node.metadata.labels
+                instance_type = ""
                 if "beta.kubernetes.io/instance-type" in labels:
+                    instance_type = labels["beta.kubernetes.io/instance-type"]
+                if "node.kubernetes.io/instance-type" in labels:
+                    instance_type = labels["node.kubernetes.io/instance-type"]
+                if instance_type != "":
                     try:
-                        instance_types[labels["beta.kubernetes.io/instance-type"]] += 1
+                        instance_types[instance_type] += 1
                     except KeyError:
                         # ignore unknown instance types
                         pass
@@ -247,7 +252,7 @@ class LLMDXKSChecks:
                 return True
 
         if self.cloud_provider == "azure":
-            return azure_instance_type(self)
+            return azure_instance_type()
         else:
             self.logger.warning("Unsupported cloud provider")
             return False
