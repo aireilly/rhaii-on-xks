@@ -47,8 +47,8 @@ class LLMDXKSChecks:
                 "result": False
             },
             {
-                "name": "gpu_availablity",
-                "function": self.test_gpu_availablity,
+                "name": "gpu_availability",
+                "function": self.test_gpu_availability,
                 "description": "Test if the cluster has GPU drivers",
                 "suggested_action": "Provision a cluster with at least one supported GPU driver",
                 "result": False
@@ -184,7 +184,7 @@ class LLMDXKSChecks:
             self.logger.warning("Missing kserve CRDs")
             return False
 
-    def test_gpu_availablity(self):
+    def test_gpu_availability(self):
         def nvidia_driver_present(node):
             if "nvidia.com/gpu" in node.status.allocatable.keys():
                 if int(node.status.allocatable["nvidia.com/gpu"]) > 0:

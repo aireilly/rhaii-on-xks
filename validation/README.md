@@ -67,7 +67,7 @@ HOST_KUBECONFIG=/path/to/kube/config make run
 | --------- | ------- |
 | `cloud_provider` | The validation script tries to determine the cloud provider the cluster is running on. Can be overridden with `--cloud-provider` |
 | `instance_type` | At least one supported instance type must be present as a cluster node. See below for details. |
-| `gpu_availablity` | At least one supported GPU must be available on a cluster node. Availability is determined by driver presence and node labels |
+| `gpu_availability` | At least one supported GPU must be available on a cluster node. Availability is determined by driver presence and node labels |
 | `crd_certmanager` | The tool checks if cert-manager CRDs are present on the cluster |
 | `crd_sailoperator` | The tool checks if sail-operator CRDs are present on the cluster |
 | `crd_lwsoperator`  | The tool checks if lws-operator CRDs are present on the cluster |
