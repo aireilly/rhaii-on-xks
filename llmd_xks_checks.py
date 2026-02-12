@@ -75,6 +75,15 @@ class LLMDXKSChecks:
                 "result": False,
                 "optional": True
             },
+            {
+                "name": "crd_kserve",
+                "function": self.test_crd_kserve,
+                "description": "test if the cluster has the kserve crds",
+                "suggested_action": "install kserve",
+                "result": False,
+                "optional": False
+            },
+
         ]
 
         self.run(self.tests)
@@ -155,6 +164,23 @@ class LLMDXKSChecks:
             return True
         else:
             self.logger.warning("Missing lws-operator CRDs")
+            return False
+
+    def test_crd_kserve(self):
+        required_crds = [
+            "llminferenceservices.serving.kserve.io",
+            "llminferenceserviceconfigs.serving.kserve.io",
+            "inferencepools.inference.networking.k8s.io",
+            "inferencemodels.inference.networking.x-k8s.io",
+            "inferenceobjectives.inference.networking.x-k8s.io",
+            "inferencepoolimports.inference.networking.x-k8s.io",
+            "inferencepools.inference.networking.x-k8s.io",
+        ]
+        if self._test_crds_present(required_crds):
+            self.logger.info("All required kserve CRDs are present")
+            return True
+        else:
+            self.logger.warning("Missing kserve CRDs")
             return False
 
     def test_gpu_availablity(self):

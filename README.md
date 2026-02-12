@@ -70,7 +70,8 @@ HOST_KUBECONFIG=/path/to/kube/config make run
 | `gpu_availablity` | At least one supported GPU must be available on a cluster node. Availability is determined by driver presence and node labels |
 | `crd_certmanager` | The tool checks if cert-manager CRDs are present on the cluster |
 | `crd_sailoperator` | The tool checks if sail-operator CRDs are present on the cluster |
-| `crd_lwsoperator` | The tool checks if lws-operator CRDs are present on the cluster |
+| `crd_lwsoperator`  | The tool checks if lws-operator CRDs are present on the cluster |
+| `crd_kserve`       | The tool checks if kserve CRDs are present on the cluster |
 
 At the end, a brief report is printed with `PASSED` or `FAILED` status for each of the above tests and the suggested action the user should follow.
 
