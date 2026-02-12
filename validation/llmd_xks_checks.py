@@ -16,6 +16,7 @@ class LLMDXKSChecks:
         self.logger = self._log_init()
 
         self.cloud_provider = kwargs.get("cloud_provider", "auto")
+        self.kube_config = kwargs.get("kube_config", None)
 
         self.logger.debug(f"Log level: {self.log_level}")
         self.logger.debug(f"Arguments: {kwargs}")
@@ -98,7 +99,7 @@ class LLMDXKSChecks:
 
     def _k8s_connection(self):
         try:
-            kubernetes.config.load_kube_config()
+            kubernetes.config.load_kube_config(config_file=self.kube_config)
             core_api = kubernetes.client.CoreV1Api()
             ext_api = kubernetes.client.ApiextensionsV1Api()
         except Exception as e:
