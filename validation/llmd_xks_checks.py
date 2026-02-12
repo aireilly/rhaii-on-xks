@@ -84,10 +84,7 @@ class LLMDXKSChecks:
                 "result": False,
                 "optional": False
             },
-
         ]
-
-        self.run(self.tests)
 
     def _log_init(self):
         logger = logging.getLogger(__name__)
@@ -271,9 +268,10 @@ class LLMDXKSChecks:
 
         return max(clouds, key=clouds.get)
 
+
     def run(self, tests=None):
         if tests is None:
-            tests = []
+            tests = self.tests
         for test in tests:
             if test["function"]():
                 self.logger.debug(f"Test {test['name']} passed")
@@ -348,6 +346,7 @@ def cli_arguments():
 def main():
     args = cli_arguments()
     validator = LLMDXKSChecks(**vars(args))
+    validator.run()
     sys.exit(validator.report())
 
 
