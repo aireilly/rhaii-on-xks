@@ -104,7 +104,7 @@ class LLMDXKSChecks:
             ext_api = kubernetes.client.ApiextensionsV1Api()
         except Exception as e:
             self.logger.error(f"{e}")
-            return None
+            return None, None
         self.logger.info("Kubernetes connection established")
         return core_api, ext_api
 
