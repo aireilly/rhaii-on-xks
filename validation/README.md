@@ -41,7 +41,7 @@ Regardless of base image, the resulting container image repository (name) and ta
 
 ```bash
 CONTAINER_REPO=quay.io/myusername/llm-d-xks-preflight CONTAINER_TAG=mytag make container
-FROM=registry.access.redhat.com/ubi9:latest CONTAINER_REPO=quay.io/myusename/llm-d-xks-preflight CONTAINER_TAG=mytag make container
+FROM=registry.access.redhat.com/ubi9:latest CONTAINER_REPO=quay.io/myusername/llm-d-xks-preflight CONTAINER_TAG=mytag make container
 ```
 
 ## Container image run
