@@ -184,7 +184,8 @@ class LLMDXKSChecks:
 
     def test_gpu_availability(self):
         def nvidia_driver_present(node):
-            if "nvidia.com/gpu" in node.status.allocatable.keys():
+            allocatable = node.status.allocatable or {}
+            if "nvidia.com/gpu" in allocatable:
                 if int(node.status.allocatable["nvidia.com/gpu"]) > 0:
                     return True
                 else:
@@ -204,7 +205,7 @@ class LLMDXKSChecks:
         }
         nodes = self.k8s_core_api.list_node()
         for node in nodes.items:
-            labels = node.metadata.labels
+            labels = node.metadata.labels or {}
             if "nvidia.com/gpu.present" in labels:
                 accelerators["nvidia"] += 1
                 self.logger.info(f"NVIDIA GPU accelerator present on node {node.metadata.name}")
@@ -228,7 +229,7 @@ class LLMDXKSChecks:
                 "Standard_ND96isr_H100_v5": 0,
                 "Standard_ND96isr_H200_v5": 0,
             }
-            nodes = self.k8s_core_api.list_node()
+            nodes = self.k8s_core_api.list_node() or {}
             for node in nodes.items:
                 labels = node.metadata.labels
                 instance_type = ""
@@ -262,14 +263,13 @@ class LLMDXKSChecks:
             "none": 0,
             "azure": 0,
         }
-        nodes = self.k8s_core_api.list_node()
+        nodes = self.k8s_core_api.list_node() or {}
         for node in nodes.items:
             labels = node.metadata.labels
             if "kubernetes.azure.com/cluster" in labels:
                 clouds["azure"] += 1
 
         return max(clouds, key=clouds.get)
-
 
     def run(self, tests=None):
         if tests is None:
