@@ -17,6 +17,7 @@ class LLMDXKSChecks:
 
         self.cloud_provider = kwargs.get("cloud_provider", "auto")
         self.kube_config = kwargs.get("kube_config", None)
+        self.suite = kwargs.get("suite", "all")
 
         self.logger.debug(f"Log level: {self.log_level}")
         self.logger.debug(f"Arguments: {kwargs}")
@@ -39,52 +40,62 @@ class LLMDXKSChecks:
 
         self.crds_cache = None
 
-        self.tests = [
-            {
-                "name": "instance_type",
-                "function": self.test_instance_type,
-                "description": "Test if the cluster has at least one supported instance type",
-                "suggested_action": "Provision a cluster with at least one supported instance type",
-                "result": False
-            },
-            {
-                "name": "gpu_availability",
-                "function": self.test_gpu_availability,
-                "description": "Test if the cluster has GPU drivers",
-                "suggested_action": "Provision a cluster with at least one supported GPU driver",
-                "result": False
-            },
-            {
-                "name": "crd_certmanager",
-                "function": self.test_crd_certmanager,
-                "description": "test if the cluster has the cert-manager crds",
-                "suggested_action": "install cert-manager",
-                "result": False
-            },
-            {
-                "name": "crd_sailoperator",
-                "function": self.test_crd_sailoperator,
-                "description": "test if the cluster has the sailoperator crds",
-                "suggested_action": "install sail-operator",
-                "result": False
-            },
-            {
-                "name": "crd_lwsoperator",
-                "function": self.test_crd_lwsoperator,
-                "description": "test if the cluster has the lws-operator crds",
-                "suggested_action": "install lws-operator",
-                "result": False,
-                "optional": True
-            },
-            {
-                "name": "crd_kserve",
-                "function": self.test_crd_kserve,
-                "description": "test if the cluster has the kserve crds",
-                "suggested_action": "install kserve",
-                "result": False,
-                "optional": False
-            },
-        ]
+        self.tests = {
+                "cluster": {
+                    "description": "Cluster readiness tests",
+                    "tests": [
+                        {
+                            "name": "instance_type",
+                            "function": self.test_instance_type,
+                            "description": "Test if the cluster has at least one supported instance type",
+                            "suggested_action": "Provision a cluster with at least one supported instance type",
+                            "result": False
+                        },
+                        {
+                            "name": "gpu_availability",
+                            "function": self.test_gpu_availability,
+                            "description": "Test if the cluster has GPU drivers",
+                            "suggested_action": "Provision a cluster with at least one supported GPU driver",
+                            "result": False
+                        },
+                        ]
+                    },
+                "operators": {
+                    "description": "Operators readiness tests",
+                    "tests": [
+                        {
+                            "name": "crd_certmanager",
+                            "function": self.test_crd_certmanager,
+                            "description": "test if the cluster has the cert-manager crds",
+                            "suggested_action": "install cert-manager",
+                            "result": False
+                        },
+                        {
+                            "name": "crd_sailoperator",
+                            "function": self.test_crd_sailoperator,
+                            "description": "test if the cluster has the sailoperator crds",
+                            "suggested_action": "install sail-operator",
+                            "result": False
+                        },
+                        {
+                            "name": "crd_lwsoperator",
+                            "function": self.test_crd_lwsoperator,
+                            "description": "test if the cluster has the lws-operator crds",
+                            "suggested_action": "install lws-operator",
+                            "result": False,
+                            "optional": True
+                        },
+                        {
+                            "name": "crd_kserve",
+                            "function": self.test_crd_kserve,
+                            "description": "test if the cluster has the kserve crds",
+                            "suggested_action": "install kserve",
+                            "result": False,
+                            "optional": False
+                        },
+                    ]
+                    }
+            }
 
     def _log_init(self):
         logger = logging.getLogger(__name__)
@@ -271,30 +282,57 @@ class LLMDXKSChecks:
 
         return max(clouds, key=clouds.get)
 
-    def run(self, tests=None):
-        if tests is None:
-            tests = self.tests
-        for test in tests:
-            if test["function"]():
-                self.logger.debug(f"Test {test['name']} passed")
-                test["result"] = True
-            else:
-                self.logger.error(f"Test {test['name']} failed")
-                test["result"] = False
+    def run(self, suite=None):
+        suites = []
+        if suite is None:
+            suite = self.suite
+        if suite == "all":
+            self.logger.debug("Running all known tests")
+            suites = ["cluster", "operators"]
+        else:
+            self.logger.debug(f"Running suite {suite}")
+            suites.append(suite)
+        for suite in suites:
+            self.logger.info(f'Starting {suite} suite of tests - {self.tests[suite]["description"]}')
+            for test in self.tests[suite]["tests"]:
+                if test["function"]():
+                    self.logger.debug(f"Test {test['name']} passed")
+                    test["result"] = True
+                else:
+                    self.logger.error(f"Test {test['name']} failed")
+                    test["result"] = False
         return None
 
-    def report(self):
+    def report(self, suite=None):
+        suites = []
+        if suite is None:
+            suite = self.suite
+        if suite == "all":
+            self.logger.debug("Reporting on all known tests")
+            suites = ["cluster", "operators"]
+        else:
+            self.logger.debug(f"Reporting on suite {suite}")
+            suites.append(suite)
         failed_counter = 0
-        for test in self.tests:
-            if test["result"]:
-                print(f"Test {test['name']} PASSED")
-            else:
-                if "optional" in test.keys() and test["optional"]:
-                    print(f"Test {test['name']} OPTIONAL [failed]")
+        passed_counter = 0
+        optional_failed_counter = 0
+        for suite in suites:
+            self.logger.debug(f"Start reporting on suite {suite}")
+            for test in self.tests[suite]["tests"]:
+                if test["result"]:
+                    print(f"Test {test['name']} PASSED")
+                    passed_counter += 1
                 else:
-                    print(f"Test {test['name']} FAILED")
-                    print(f"    Suggested action: {test['suggested_action']}")
-                    failed_counter += 1
+                    if "optional" in test.keys() and test["optional"]:
+                        print(f"Test {test['name']} OPTIONAL [failed]")
+                        optional_failed_counter += 1
+                    else:
+                        print(f"Test {test['name']} FAILED")
+                        print(f"    Suggested action: {test['suggested_action']}")
+                        failed_counter += 1
+        print(f"Total PASSED {passed_counter}")
+        print(f"Total OPTIONAL FAILED {optional_failed_counter}")
+        print(f"Total FAILED {failed_counter}")
         return failed_counter
 
 
@@ -341,6 +379,14 @@ def cli_arguments():
         env_var="LLMD_XKS_CLOUD_PROVIDER",
         help="Cloud provider to perform checks on (by default, try to auto-detect)"
     )
+
+    parser.add_argument(
+        "-s", "--suite",
+        choices=["all", "cluster", "operators"],
+        default="all",
+        env_var="LLMD_XKS_SUITE",
+        help="Test suite to execute"
+        )
 
     return parser.parse_args()
 

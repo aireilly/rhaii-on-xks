@@ -10,11 +10,13 @@ FROM ?= registry.fedoraproject.org/fedora:latest
 
 help:
 	@echo "Available targets:"
-	@echo "  container  Build a container image from the current directory"
-	@echo "  run        Run the container image"
-	@echo "  push       Push the container image to the container registry"
-	@echo "  lint       Check code for PEP8 compliance"
-	@echo "  pep8-fix   Automatically fix PEP8 compliance issues"
+	@echo "  container     Build a container image from the current directory"
+	@echo "  run           Run the container image with all tests"
+	@echo "  run-cluster   Run the container image with all tests"
+	@echo "  run-operators Run the container image with all tests"
+	@echo "  push          Push the container image to the container registry"
+	@echo "  lint          Check code for PEP8 compliance"
+	@echo "  pep8-fix      Automatically fix PEP8 compliance issues"
 	@echo ""
 	@echo "Configuration settings (all can be overridden by using environment variables):"
 	@echo "  MAX_LINE_LENGTH=$(MAX_LINE_LENGTH) Python linter line length"
@@ -29,9 +31,18 @@ help:
 container:
 	$(CONTAINER_TOOL) build $(FROM:%=--build-arg BASEIMAGE=%) --tag $(CONTAINER_REPO):$(CONTAINER_TAG) .
 
-# Run the container image
+# Run the container image with all tests
 run:
 	$(CONTAINER_TOOL) run --rm -it --volume $(HOST_KUBECONFIG):/root/.kube/config:ro,Z $(CONTAINER_REPO):$(CONTAINER_TAG)
+
+# Run the container image with cluster readiness tests
+run-cluster:
+	$(CONTAINER_TOOL) run --rm -it --volume $(HOST_KUBECONFIG):/root/.kube/config:ro,Z $(CONTAINER_REPO):$(CONTAINER_TAG) -s cluster
+
+# Run the container image with operators readiness tests
+run-operators:
+	$(CONTAINER_TOOL) run --rm -it --volume $(HOST_KUBECONFIG):/root/.kube/config:ro,Z $(CONTAINER_REPO):$(CONTAINER_TAG) -s operators
+
 
 # Push the container image to the container registry
 push:

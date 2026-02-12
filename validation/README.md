@@ -63,11 +63,16 @@ HOST_KUBECONFIG=/path/to/kube/config make run
 
 ## Validations
 
+Suite: cluster -- Cluster readiness tests
 | Test name | Meaning |
 | --------- | ------- |
 | `cloud_provider` | The validation script tries to determine the cloud provider the cluster is running on. Can be overridden with `--cloud-provider` |
 | `instance_type` | At least one supported instance type must be present as a cluster node. See below for details. |
 | `gpu_availability` | At least one supported GPU must be available on a cluster node. Availability is determined by driver presence and node labels |
+
+Suite: operators -- Operator readiness tests
+| Test name | Meaning |
+| --------- | ------- |
 | `crd_certmanager` | The tool checks if cert-manager CRDs are present on the cluster |
 | `crd_sailoperator` | The tool checks if sail-operator CRDs are present on the cluster |
 | `crd_lwsoperator`  | The tool checks if lws-operator CRDs are present on the cluster |
@@ -95,6 +100,7 @@ Required dependencies:
 - `-k, --kube-config`: Path to the kubeconfig file (overrides KUBECONFIG environment variable)
 - `-u, --cloud-provider`: Cloud provider to perform checks on (choices: auto, azure, default: auto)
 - `-c, --config`: Path to a custom config file
+- `-s, --suite`: Test suite to run (choices: all, cluster, operators, default: all)
 - `-h, --help`: Show help message
 
 ### Configuration File
