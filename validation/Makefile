@@ -1,5 +1,3 @@
-# Makefile for LLMDXKXCheck
-
 # Configurable settings
 MAX_LINE_LENGTH ?= 120
 CONTAINER_REPO ?= localhost/llmd-xks-checks
@@ -28,7 +26,7 @@ help:
 
 # Build a container image from the current directory
 container:
-	$(CONTAINER_TOOL) build --from $(FROM) --tag $(CONTAINER_REPO):$(CONTAINER_TAG) .
+	$(CONTAINER_TOOL) build $(FROM:%=--build-arg BASEIMAGE=%) --tag $(CONTAINER_REPO):$(CONTAINER_TAG) .
 
 # Run the container image
 run:
