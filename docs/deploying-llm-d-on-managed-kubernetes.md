@@ -1,7 +1,7 @@
 # Deploying Red Hat AI Inference Server on Managed Kubernetes
 
 **Product:** Red Hat AI Inference Server (RHAIIS)
-**Version:** 0.15
+**Version:** 3.4
 **Platforms:** Azure Kubernetes Service (AKS), CoreWeave Kubernetes Service (CKS)
 
 ---
@@ -21,16 +21,16 @@ This guide provides step-by-step instructions for deploying Red Hat AI Inference
 ## Table of Contents
 
 1. [Prerequisites](#1-prerequisites)
+   - [Preflight Validation](#15-preflight-validation-recommended)
 2. [Architecture Overview](#2-architecture-overview)
-3. [Deploying Infrastructure Components](#3-deploying-infrastructure-components)
-4. [Deploying the Inference Controller](#4-deploying-the-inference-controller)
-5. [Configuring the Inference Gateway](#5-configuring-the-inference-gateway)
-6. [Deploying an LLM Inference Service](#6-deploying-an-llm-inference-service)
-7. [Verifying the Deployment](#7-verifying-the-deployment)
-8. [Optional: Enabling Monitoring](#8-optional-enabling-monitoring)
-9. [Collecting Debug Information](#9-collecting-debug-information)
-10. [Troubleshooting](#10-troubleshooting)
-11. [Appendix: Component Versions](#appendix-component-versions)
+3. [Deploying All Components](#3-deploying-all-components)
+4. [Configuring the Inference Gateway](#4-configuring-the-inference-gateway)
+5. [Deploying an LLM Inference Service](#5-deploying-an-llm-inference-service)
+6. [Verifying the Deployment](#6-verifying-the-deployment)
+7. [Optional: Enabling Monitoring](#7-optional-enabling-monitoring)
+8. [Collecting Debug Information](#8-collecting-debug-information)
+9. [Troubleshooting](#9-troubleshooting)
+10. [Appendix: Component Versions](#appendix-component-versions)
 
 ---
 
@@ -54,7 +54,6 @@ Install the following tools on your workstation:
 | `kubectl` | 1.28+ | Kubernetes CLI |
 | `helm` | 3.17+ | Helm package manager |
 | `helmfile` | 0.160+ | Declarative Helm deployments |
-| `kustomize` | 5.7+ | Kubernetes manifest customization |
 
 ### 1.3 Red Hat Registry Authentication
 
@@ -122,6 +121,36 @@ kubectl describe nodes | grep -A5 "nvidia.com/gpu"
 
 ---
 
+## 1.5 Preflight Validation (Recommended)
+
+Run the preflight validation checks to verify your cluster is properly configured:
+
+```bash
+# Build the validation container
+cd validation && make container
+
+# Run preflight checks against your cluster
+make run
+```
+
+The preflight tool automatically detects your cloud provider and validates:
+
+| Check | When it passes |
+|-------|----------------|
+| Cloud provider | Cluster is reachable and provider detected (pre-deployment) |
+| Instance type | Supported GPU instance types are present (pre-deployment) |
+| GPU availability | GPU drivers and node labels found (pre-deployment) |
+| cert-manager CRDs | After `make deploy-all` |
+| Sail Operator CRDs | After `make deploy-all` |
+| LWS Operator CRDs | After `make deploy-all` |
+| KServe CRDs | After `make deploy-all` |
+
+> **Tip:** Run before deploying to verify cluster readiness (cloud provider, GPU, instance types). Run again after deployment to confirm all CRDs are installed. See Section 6.4 for full post-deployment validation.
+
+See the [Preflight Validation README](../validation/README.md) for configuration options and standalone usage.
+
+---
+
 ## 2. Architecture Overview
 
 Red Hat AI Inference Server on managed Kubernetes consists of the following components:
@@ -152,7 +181,7 @@ Red Hat AI Inference Server on managed Kubernetes consists of the following comp
 
 ---
 
-## 3. Deploying Infrastructure Components
+## 3. Deploying All Components
 
 ### 3.1 Clone the Deployment Repository
 
@@ -161,13 +190,15 @@ git clone https://github.com/opendatahub-io/rhaii-on-xks.git
 cd rhaii-on-xks
 ```
 
-### 3.2 Deploy Infrastructure
+### 3.2 Deploy
 
-Deploy cert-manager, Istio (Sail Operator), and LeaderWorkerSet:
+Deploy cert-manager, Istio (Sail Operator), LeaderWorkerSet, and KServe:
 
 ```bash
 make deploy-all
 ```
+
+> **Note:** To deploy components individually, use `make deploy-cert-manager`, `make deploy-istio`, `make deploy-lws`, and `make deploy-kserve`.
 
 ### 3.3 Verify Infrastructure Deployment
 
@@ -202,46 +233,13 @@ InferencePool API: v1 (inference.networking.k8s.io)
 Istio version: v1.27.5
 ```
 
----
-
-## 4. Deploying the Inference Controller
-
-### 4.1 Deploy KServe Controller
-
-```bash
-make deploy-kserve
-```
-
-This command performs the following actions:
-- Creates the `opendatahub` namespace
-- Applies cert-manager PKI resources for webhook certificates
-- Deploys the KServe controller with LLMInferenceService support
-- Configures validating webhooks
-
-### 4.2 Verify Controller Deployment
-
-```bash
-kubectl get pods -n opendatahub
-```
-
-**Expected output:**
-
-```text
-NAME                                        READY   STATUS    RESTARTS   AGE
-kserve-controller-manager-xxxxxxxxx-xxxxx   1/1     Running   0          2m
-```
-
-Verify the LLMInferenceServiceConfig templates are installed:
-
-```bash
-kubectl get llminferenceserviceconfig -n opendatahub
-```
+> **TLS Certificates:** The default configuration uses a self-signed CA for internal mTLS between inference components (router, scheduler, vLLM). This is sufficient for most deployments as the certificates are only used for pod-to-pod communication within the cluster. If your organization requires certificates issued by a corporate PKI, replace the `opendatahub-selfsigned-issuer` with a cert-manager ClusterIssuer backed by your CA (e.g., Vault, AWS ACM PCA, or an external PKI). See the [KServe Chart README - cert-manager PKI Setup](https://github.com/opendatahub-io/rhaii-on-xks/blob/main/charts/kserve/README.md#cert-manager-pki-setup) for details. The KServe chart version is configured in `values.yaml` (`kserveChartVersion`). See the [KServe Chart README](https://github.com/opendatahub-io/rhaii-on-xks/blob/main/charts/kserve/README.md) for chart details and cert-manager PKI prerequisites.
 
 ---
 
-## 5. Configuring the Inference Gateway
+## 4. Configuring the Inference Gateway
 
-### 5.1 Create the Gateway
+### 4.1 Create the Gateway
 
 Run the gateway setup script:
 
@@ -254,7 +252,7 @@ This script:
 2. Creates an Istio Gateway with the CA bundle mounted for mTLS
 3. Configures the Gateway pod with registry authentication
 
-### 5.2 Verify Gateway Deployment
+### 4.2 Verify Gateway Deployment
 
 ```bash
 kubectl get gateway -n opendatahub
@@ -275,16 +273,16 @@ kubectl get pods -n opendatahub -l gateway.networking.k8s.io/gateway-name=infere
 
 ---
 
-## 6. Deploying an LLM Inference Service
+## 5. Deploying an LLM Inference Service
 
-### 6.1 Create the Application Namespace
+### 5.1 Create the Application Namespace
 
 ```bash
 export NAMESPACE=llm-inference
 kubectl create namespace $NAMESPACE
 ```
 
-### 6.2 Configure Registry Authentication
+### 5.2 Configure Registry Authentication
 
 Copy the pull secret to your application namespace:
 
@@ -301,7 +299,7 @@ kubectl patch serviceaccount default -n $NAMESPACE \
   -p '{"imagePullSecrets": [{"name": "redhat-pull-secret"}]}'
 ```
 
-### 6.3 Deploy the LLMInferenceService
+### 5.3 Deploy the LLMInferenceService
 
 Create the LLMInferenceService resource:
 
@@ -349,7 +347,7 @@ spec:
 EOF
 ```
 
-### 6.4 Monitor Deployment Progress
+### 5.4 Monitor Deployment Progress
 
 Watch the LLMInferenceService status:
 
@@ -361,9 +359,9 @@ The service is ready when the `READY` column shows `True`.
 
 ---
 
-## 7. Verifying the Deployment
+## 6. Verifying the Deployment
 
-### 7.1 Check Service Status
+### 6.1 Check Service Status
 
 ```bash
 kubectl get llmisvc -n $NAMESPACE
@@ -376,7 +374,7 @@ NAME                READY   URL                                    AGE
 qwen2-7b-instruct   True    http://20.xx.xx.xx/llm-inference/...   5m
 ```
 
-### 7.2 Check Pod Status
+### 6.2 Check Pod Status
 
 ```bash
 kubectl get pods -n $NAMESPACE
@@ -384,7 +382,7 @@ kubectl get pods -n $NAMESPACE
 
 All pods should show `Running` status with `1/1` or `2/2` ready containers.
 
-### 7.3 Test Inference
+### 6.3 Test Inference
 
 Retrieve the service URL:
 
@@ -405,19 +403,41 @@ curl -X POST "${SERVICE_URL}/v1/chat/completions" \
   }'
 ```
 
+### 6.4 Run Preflight Validation
+
+Run the full validation suite to confirm all components are properly installed:
+
+```bash
+cd validation && make container && make run
+```
+
+All checks should show `PASSED`:
+
+```text
+cloud_provider   PASSED
+instance_type    PASSED
+gpu_availability PASSED
+crd_certmanager  PASSED
+crd_sailoperator PASSED
+crd_lwsoperator  PASSED
+crd_kserve       PASSED
+```
+
+If any checks fail, review the suggested actions in the output. See the [Preflight Validation README](../validation/README.md) for configuration options.
+
 ---
 
-## 8. Optional: Enabling Monitoring
+## 7. Optional: Enabling Monitoring
 
 Monitoring is disabled by default. Enable it if you need:
 - Grafana dashboards for inference metrics
 - Workload Variant Autoscaler (WVA) for auto-scaling
 
-### 8.1 Prerequisites
+### 7.1 Prerequisites
 
 Install Prometheus with ServiceMonitor/PodMonitor CRD support. See the [Monitoring Setup Guide](../monitoring-stack/) for platform-specific instructions.
 
-### 8.2 Enable Monitoring in KServe
+### 7.2 Enable Monitoring in KServe
 
 ```bash
 kubectl set env deployment/kserve-controller-manager \
@@ -427,7 +447,7 @@ kubectl set env deployment/kserve-controller-manager \
 
 When enabled, KServe automatically creates `PodMonitor` resources for vLLM pods.
 
-### 8.3 Verify
+### 7.3 Verify
 
 ```bash
 # Check PodMonitors created by KServe
@@ -436,7 +456,7 @@ kubectl get podmonitors -n <llmisvc-namespace>
 
 ---
 
-## 9. Collecting Debug Information
+## 8. Collecting Debug Information
 
 If you encounter issues during or after deployment, collect diagnostic data for troubleshooting:
 
@@ -465,9 +485,9 @@ See the full guide: [Collecting Debug Information](./collecting-debug-informatio
 
 ---
 
-## 10. Troubleshooting
+## 9. Troubleshooting
 
-### 10.1 Controller Pod Stuck in ContainerCreating
+### 9.1 Controller Pod Stuck in ContainerCreating
 
 **Symptom:** The `kserve-controller-manager` pod remains in `ContainerCreating` state.
 
@@ -475,12 +495,17 @@ See the full guide: [Collecting Debug Information](./collecting-debug-informatio
 
 **Resolution:**
 
+Verify the cert-manager PKI resources are applied (the KServe chart expects `opendatahub-ca-issuer` ClusterIssuer):
+
 ```bash
-kubectl apply -k "https://github.com/opendatahub-io/kserve/config/overlays/odh-test/cert-manager?ref=release-v0.15"
-kubectl wait --for=condition=Ready certificate/kserve-webhook-server -n opendatahub --timeout=120s
+kubectl get clusterissuer opendatahub-ca-issuer
+kubectl get certificate -n cert-manager
+
+# If missing, re-run the deployment
+make deploy-kserve
 ```
 
-### 10.2 Gateway Pod Shows ErrImagePull
+### 9.2 Gateway Pod Shows ErrImagePull
 
 **Symptom:** The Gateway pod fails with `ErrImagePull` or `ImagePullBackOff`.
 
@@ -499,7 +524,7 @@ kubectl patch sa inference-gateway-istio -n opendatahub \
 kubectl delete pod -n opendatahub -l gateway.networking.k8s.io/gateway-name=inference-gateway
 ```
 
-### 10.3 LLMInferenceService Pod Shows FailedScheduling
+### 9.3 LLMInferenceService Pod Shows FailedScheduling
 
 **Symptom:** The inference pod shows `FailedScheduling` with message "Insufficient nvidia.com/gpu".
 
@@ -517,9 +542,9 @@ kubectl delete pod -n opendatahub -l gateway.networking.k8s.io/gateway-name=infe
    kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.taints}{"\n"}{end}'
    ```
 
-3. Add matching tolerations to the LLMInferenceService spec (see Section 6.3).
+3. Add matching tolerations to the LLMInferenceService spec (see Section 5.3).
 
-### 10.4 Webhook Validation Errors During Deployment
+### 9.4 Webhook Validation Errors During Deployment
 
 **Symptom:** Deployment fails with "no endpoints available for service" webhook errors.
 
@@ -528,11 +553,13 @@ kubectl delete pod -n opendatahub -l gateway.networking.k8s.io/gateway-name=infe
 **Resolution:**
 
 ```bash
+# Delete stale webhooks
 kubectl delete validatingwebhookconfiguration \
   llminferenceservice.serving.kserve.io \
   llminferenceserviceconfig.serving.kserve.io \
   --ignore-not-found
 
+# Re-deploy KServe
 make deploy-kserve
 ```
 
@@ -546,7 +573,7 @@ make deploy-kserve
 | Sail Operator (Istio) | 3.2.1 | `registry.redhat.io/openshift-service-mesh/istio-sail-operator-bundle:3.2` |
 | Istio | 1.27.x | Dynamic resolution via `v1.27-latest` |
 | LeaderWorkerSet | 1.0 | `registry.k8s.io/lws/lws-controller` |
-| KServe Controller | 0.15 | `quay.io/opendatahub/kserve-controller` |
+| KServe Controller | 0.15 (chart 3.4.0-ea.1) | `registry.redhat.io` (via `charts/kserve/`) |
 | vLLM | Latest | `registry.redhat.io/rhaiis-tech-preview/vllm-openai-rhel9` |
 
 ### API Versions
@@ -565,7 +592,7 @@ make deploy-kserve
 For assistance with Red Hat AI Inference Server deployments, contact Red Hat Support or consult the product documentation.
 
 **Additional Resources:**
+- [KServe Chart README](https://github.com/opendatahub-io/rhaii-on-xks/blob/main/charts/kserve/README.md) - KServe Helm chart details, PKI prerequisites, and OCI registry install
+- [Preflight Validation](https://github.com/opendatahub-io/rhaii-on-xks/blob/main/validation/README.md) - Cluster readiness and post-deployment validation checks
 - [Monitoring Setup Guide](../monitoring-stack/) - Optional Prometheus/Grafana configuration for dashboards and autoscaling
-- [KServe LLMInferenceService Samples](https://github.com/opendatahub-io/kserve/tree/main/docs/samples/llmisvc)
-- [Gateway API Documentation](https://gateway-api.sigs.k8s.io/)
-- [Istio Documentation](https://istio.io/latest/docs/)
+- [KServe LLMInferenceService Samples](https://github.com/red-hat-data-services/kserve/tree/rhoai-3.4/docs/samples/llmisvc)

@@ -91,11 +91,19 @@ done
 echo "$CRDS" | grep -E "\.cert-manager\.io" | while read -r crd; do
     kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
 done
-# LWS and cert-manager operator CRDs (exact names to avoid matching other OpenShift operators)
-kubectl delete crd certmanagers.operator.openshift.io leaderworkersetoperators.operator.openshift.io --ignore-not-found 2>/dev/null || true
+# LWS CRDs
+echo "$CRDS" | grep -E "leaderworkerset\.x-k8s\.io" | while read -r crd; do
+    kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
+done
+# Operator CRDs (exact names to avoid matching other OpenShift operators)
+kubectl delete crd certmanagers.operator.openshift.io leaderworkersetoperators.operator.openshift.io istiocsrs.operator.openshift.io --ignore-not-found 2>/dev/null || true
 # Gateway API CRDs and Inference Extension CRDs (InferencePool, InferenceModel)
 # Matches both inference.networking.k8s.io (v1) and inference.networking.x-k8s.io (v1alpha2)
 echo "$CRDS" | grep -E "gateway\.networking\.k8s\.io|inference\.networking\.k8s\.io|inference\.networking\.x-k8s\.io" | while read -r crd; do
+    kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
+done
+# KServe CRDs
+echo "$CRDS" | grep -E "serving\.kserve\.io" | while read -r crd; do
     kubectl delete "$crd" --ignore-not-found 2>/dev/null || true
 done
 # Infrastructure stub CRD
@@ -107,5 +115,6 @@ kubectl delete namespace cert-manager --ignore-not-found --wait=false 2>/dev/nul
 kubectl delete namespace cert-manager-operator --ignore-not-found --wait=false 2>/dev/null || true
 kubectl delete namespace istio-system --ignore-not-found --wait=false 2>/dev/null || true
 kubectl delete namespace openshift-lws-operator --ignore-not-found --wait=false 2>/dev/null || true
+kubectl delete namespace opendatahub --ignore-not-found --wait=false 2>/dev/null || true
 
 log "=== Cleanup Complete ==="

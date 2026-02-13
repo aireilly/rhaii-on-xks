@@ -5,6 +5,7 @@
 #   helmfile apply --selector name=cert-manager-operator  # Deploy only cert-manager
 #   helmfile apply --selector name=sail-operator          # Deploy only istio
 #   helmfile apply --selector name=lws-operator           # Deploy only lws
+#   helmfile sync  --selector name=kserve-rhaii-xks        # Deploy only Kserve
 #   helmfile destroy                                      # Remove all
 
 environments:
@@ -37,3 +38,30 @@ helmfiles:
     values:
       - useSystemPodmanAuth: {{ .Values.useSystemPodmanAuth | default true }}
       - pullSecretFile: {{ .Values.pullSecretFile | default "" | quote }}
+
+---
+
+{{ $kserveChart := "oci://ghcr.io/opendatahub-io/kserve-rhaii-xks" }}
+{{ $kserveVersion := .Values.kserveChartVersion | default "3.4.0-ea.1-dev-8a30e66" }}
+
+releases:
+  - name: kserve-rhaii-xks
+    chart: {{ $kserveChart }}
+    # Use dev variant until official builds are released to registry.redhat.io
+    version: {{ $kserveVersion }}
+    namespace: opendatahub
+    disableValidation: true
+    # CRDs are applied separately via presync hook to avoid 1MB secret size limit
+    hooks:
+      # Apply CRDs before helm install via presync
+      - events: ["presync"]
+        showlogs: true
+        command: "sh"
+        args:
+          - "-c"
+          - |
+            set -e
+            CHART_DIR=$(mktemp -d)
+            trap 'rm -rf "$CHART_DIR"' EXIT
+            helm pull {{ $kserveChart }} --version {{ $kserveVersion }} --untar --untardir "$CHART_DIR"
+            kubectl apply -f "$CHART_DIR"/kserve-rhaii-xks/crds/ --server-side
