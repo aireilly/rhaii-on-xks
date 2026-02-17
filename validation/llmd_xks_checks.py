@@ -23,9 +23,8 @@ class LLMDXKSChecks:
         self.logger.debug(f"Arguments: {kwargs}")
         self.logger.debug("LLMDXKSChecks initialized")
 
-        self.k8s_core_api, self.k8s_ext_api = self._k8s_connection()
-
-        if self.k8s_core_api is None or self.k8s_ext_api is None:
+        self.k8s_client = self._k8s_connection()
+        if self.k8s_client is None:
             self.logger.error("Failed to connect to Kubernetes cluster")
             sys.exit(1)
 
@@ -71,10 +70,24 @@ class LLMDXKSChecks:
                             "result": False
                         },
                         {
+                            "name": "operator_certmanager",
+                            "function": self.test_operator_certmanager,
+                            "description": "test if the cert-manager operator is running properly",
+                            "suggested_action": "install or verify cert-manager deployment",
+                            "result": False
+                        },
+                        {
                             "name": "crd_sailoperator",
                             "function": self.test_crd_sailoperator,
                             "description": "test if the cluster has the sailoperator crds",
                             "suggested_action": "install sail-operator",
+                            "result": False
+                        },
+                        {
+                            "name": "operator_sail",
+                            "function": self.test_operator_sail,
+                            "description": "test if the sail operator is running properly",
+                            "suggested_action": "install or verify sail operator deployment",
                             "result": False
                         },
                         {
@@ -86,12 +99,27 @@ class LLMDXKSChecks:
                             "optional": True
                         },
                         {
+                            "name": "operator_lws",
+                            "function": self.test_operator_lws,
+                            "description": "test if the lws-operator is running properly",
+                            "suggested_action": "install or verify lws operator deployment",
+                            "result": False,
+                            "optional": True
+                        },
+                        {
                             "name": "crd_kserve",
                             "function": self.test_crd_kserve,
                             "description": "test if the cluster has the kserve crds",
                             "suggested_action": "install kserve",
                             "result": False,
                             "optional": False
+                        },
+                        {
+                            "name": "operator_kserve",
+                            "function": self.test_operator_kserve,
+                            "description": "test if the kserve controller is running properly",
+                            "suggested_action": "install or verify kserve deployment",
+                            "result": False,
                         },
                     ]
                     }
@@ -108,18 +136,18 @@ class LLMDXKSChecks:
     def _k8s_connection(self):
         try:
             kubernetes.config.load_kube_config(config_file=self.kube_config)
-            core_api = kubernetes.client.CoreV1Api()
-            ext_api = kubernetes.client.ApiextensionsV1Api()
+            client = kubernetes.client
+            client.CoreV1Api()
         except Exception as e:
             self.logger.error(f"{e}")
-            return None, None
+            return None
         self.logger.info("Kubernetes connection established")
-        return core_api, ext_api
+        return client
 
     def _get_all_crd_names(self, cache=True):
         if cache and self.crds_cache is not None:
             return self.crds_cache
-        crd_list = self.k8s_ext_api.list_custom_resource_definition()
+        crd_list = self.k8s_client.ApiextensionsV1Api().list_custom_resource_definition()
         crd_names = {crd.metadata.name for crd in crd_list.items}
         if cache:
             self.crds_cache = crd_names
@@ -136,6 +164,23 @@ class LLMDXKSChecks:
             self.logger.debug("All tested CRDs are present")
         return return_value
 
+    def _deployment_ready(self, namespace_name, deployment_name):
+        try:
+            deployment = self.k8s_client.AppsV1Api().read_namespaced_deployment(
+                    name=deployment_name, namespace=namespace_name)
+        except Exception as e:
+            self.logger.error(f"{e}")
+            return False
+        desired = deployment.spec.replicas
+        ready = deployment.status.ready_replicas or 0
+        if ready != desired:
+            self.logger.warning(f"Deployment {namespace_name}/{deployment_name} has "
+                                f"only {ready} replicas out of {desired} desired")
+            return False
+        else:
+            self.logger.info(f"Deployment {namespace_name}/{deployment_name} ready")
+            return True
+
     def test_crd_certmanager(self):
         required_crds = [
             "certificaterequests.cert-manager.io",
@@ -149,6 +194,18 @@ class LLMDXKSChecks:
         else:
             self.logger.warning("Missing cert-manager CRDs")
             return False
+
+    def test_operator_certmanager(self):
+        test_failed = False
+        if not self._deployment_ready("cert-manager-operator", "cert-manager-operator-controller-manager"):
+            test_failed = True
+        if not self._deployment_ready("cert-manager", "cert-manager-webhook"):
+            test_failed = True
+        if not self._deployment_ready("cert-manager", "cert-manager-cainjector"):
+            test_failed = True
+        if not self._deployment_ready("cert-manager", "cert-manager"):
+            test_failed = True
+        return not test_failed
 
     def test_crd_sailoperator(self):
         required_crds = [
@@ -165,6 +222,14 @@ class LLMDXKSChecks:
             self.logger.warning("Missing sail-operator CRDs")
             return False
 
+    def test_operator_sail(self):
+        test_failed = False
+        if not self._deployment_ready("istio-system", "istiod"):
+            test_failed = True
+        if not self._deployment_ready("istio-system", "servicemesh-operator3"):
+            test_failed = True
+        return not test_failed
+
     def test_crd_lwsoperator(self):
         required_crds = [
             "leaderworkersets.leaderworkerset.x-k8s.io"
@@ -175,6 +240,12 @@ class LLMDXKSChecks:
         else:
             self.logger.warning("Missing lws-operator CRDs")
             return False
+
+    def test_operator_lws(self):
+        test_failed = False
+        if not self._deployment_ready("openshift-lws-operator", "openshift-lws-operator"):
+            test_failed = True
+        return not test_failed
 
     def test_crd_kserve(self):
         required_crds = [
@@ -192,6 +263,12 @@ class LLMDXKSChecks:
         else:
             self.logger.warning("Missing kserve CRDs")
             return False
+
+    def test_operator_kserve(self):
+        test_failed = False
+        if not self._deployment_ready("opendatahub", "kserve-controller-manager"):
+            test_failed = True
+        return not test_failed
 
     def test_gpu_availability(self):
         def nvidia_driver_present(node):
@@ -214,7 +291,7 @@ class LLMDXKSChecks:
             "nvidia": 0,
             "other": 0,
         }
-        nodes = self.k8s_core_api.list_node()
+        nodes = self.k8s_client.CoreV1Api().list_node() or {}
         for node in nodes.items:
             labels = node.metadata.labels or {}
             if "nvidia.com/gpu.present" in labels:
@@ -240,7 +317,7 @@ class LLMDXKSChecks:
                 "Standard_ND96isr_H100_v5": 0,
                 "Standard_ND96isr_H200_v5": 0,
             }
-            nodes = self.k8s_core_api.list_node() or {}
+            nodes = self.k8s_client.CoreV1Api().list_node() or {}
             for node in nodes.items:
                 labels = node.metadata.labels
                 instance_type = ""
@@ -274,7 +351,7 @@ class LLMDXKSChecks:
             "none": 0,
             "azure": 0,
         }
-        nodes = self.k8s_core_api.list_node() or {}
+        nodes = self.k8s_client.CoreV1Api().list_node() or {}
         for node in nodes.items:
             labels = node.metadata.labels
             if "kubernetes.azure.com/cluster" in labels:
